@@ -30,7 +30,8 @@ extern e_byte EVA_RAM[ADDRSPACE 0xFF][ADDRSPACE 0xFFFF];
 typedef struct
 {
 	e_long r0, r1, r2, r3;
-	e_flt  f0, f1, f2, f3;	
+	e_flt  f0, f1, f2, f3;
+	e_byte hrc;	
 	e_word flags;
 	e_byte pc;
 

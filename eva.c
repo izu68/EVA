@@ -71,6 +71,7 @@ void eva_pulse_reset ( void )
 	eva.r0 = eva.r1 = eva.r2 = eva.r3 =
 	eva.f0 = eva.f1 = eva.f2 = eva.f3 =
 	eva.flags = eva.pc = 0;
+	eva.hrc = 2;
 	eva.soft_boot = false;
 	printf ( "(EVA) Registers and ports clear\n" );
 
@@ -144,7 +145,7 @@ void eva_process_ect ( void )
 	/* if 68K is not writing to ECT, process ECT */
 	if ( EVA_RAM[0x00][0xF0] != 0 )
 	{
-		for ( int i = 0x10; i < 0xF0; i += 16 )
+		for ( int i = 0x70; i < 0xF0; i += 16 )
 		{
 			eva.pc = i;
 			switch ( EVA_RAM[0x00][i] )
@@ -161,7 +162,7 @@ void eva_process_ect ( void )
 			}
 		}
 		/* clear ECT */
-		for ( int i = 0x10; i <= 0xF0; i++ )
+		for ( int i = 0x70; i <= 0xF0; i++ )
 		{
 			EVA_RAM[0x00][i] = 0x00;
 		}
