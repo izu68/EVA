@@ -1,0 +1,12 @@
+; -----------------------------------------------------------------
+; Nihil - Error handlers
+; Contents :
+;		Dummy
+; Changes :
+;		Sun Oct 20 2024 14:52: Created file
+; -----------------------------------------------------------------
+
+	global dummy_error_handl
+
+dummy_error_handl:
+	jmp	dummy_error_handl

@@ -1,0 +1,33 @@
+; -----------------------------------------------------------------
+; Nihil - Low ROM data
+; Contents :
+;		Reset Vectors
+;		ROM Header
+; -----------------------------------------------------------------
+
+	section .text.keepboot
+
+; ================= Reset Vectors =================================
+	
+	org $000000
+
+	dc.l $FFFFE0 		; Initial stack pointer
+	dc.l entry_point	; Reset vector
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+	dc.l dummy_error_handl	; Error handle dummy
+		
+; ================= ROM Header ====================================
+
+	org $000100
+
+	ds.b 208
+	dc.b "EVA BIOS       "
+	ds.b $BF

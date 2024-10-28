@@ -1,0 +1,20 @@
+; -----------------------------------------------------------------
+; Nihil - Other ports
+; Contents :
+;		Hardware Version
+;		TMSS Port
+;		IO Ports
+;		32X Check
+; -----------------------------------------------------------------
+
+; ================= Ports =========================================
+
+HWVERSION = $A10001         	; Console region and version
+TMSSPORT = $A14000         	; Write "SEGA" to disable TMSS
+
+IOCTRL1 = $A10009         	; I/O control port 1P
+IOCTRL2 = $A1000B         	; I/O control port 2P
+IODATA1 = $A10003         	; I/O data port 1P
+IODATA2 = $A10005         	; I/O data port 2P
+
+MARSCHECK = $A130EC         	; 32X "MARS" string

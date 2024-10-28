@@ -1,0 +1,185 @@
+; -----------------------------------------------------------------
+; Nihil - VDP
+; Contents :
+;		VDP reset subroutine
+;		VDP MEM clear subroutine
+;		VDP enable/disable display
+;		VDP MEM set macros
+;		CPU VRAM copy subroutine
+;		Wait VBlank subroutine
+; -----------------------------------------------------------------
+
+	section .text
+
+	global vdp_reset
+	global vdp_clearmem
+	global vdp_enable_display
+	global vdp_disable_display
+	global vdp_write_vram_cpu_w
+	global vdp_write_vram_cpu_l
+	global vdp_write_cram_cpu
+	global vdp_wait_vblank
+	
+
+	include "vdpi.68k"
+
+; ================= Reset VDP =====================================
+
+vdp_reset:
+	tst.w	(VDPCTRL)
+	lea	(VDPCTRL),a0
+	move.w  #VDPREG_MODE1|$04,(a0)		; Mode register #1
+    	move.w  #VDPREG_MODE2|$74,(a0)    	; Mode register #2
+    	move.w  #VDPREG_MODE3|$00,(a0)    	; Mode register #3
+    	move.w  #VDPREG_MODE4|$81,(a0)    	; Mode register #4
+    
+    	move.w  #VDPREG_PLANEA|$38,(a0)   	; (E000 / 400)
+    	move.w  #VDPREG_PLANEB|$06,(a0)   	; (C000 / 2000)
+    	move.w  #VDPREG_SPRITE|$7A,(a0)   	; (F400 / 200)
+    	move.w  #VDPREG_WINDOW|$34,(a0)   	; (D000 / 400)
+    	move.w  #VDPREG_HSCROLL|$3C,(a0)  	; (F000 / 400)
+    
+    	move.w  #VDPREG_SIZE|%00010001,(a0)     ; Tilemap size
+    	move.w  #VDPREG_WINX|$00,(a0)     	; Window X split
+    	move.w  #VDPREG_WINY|$00,(a0)     	; Window Y split
+    	move.w  #VDPREG_INCR|$02,(a0)     	; Autoincrement
+    	move.w  #VDPREG_BGCOL|$00,(a0)    	; Background color
+    	move.w  #VDPREG_HRATE|$FF,(a0)    	; HBlank IRQ rate
+	rts
+
+; ================= Clear MEM =====================================
+
+vdp_clearmem:
+	moveq	#0, d0			; To fill with zeros
+	lea	(VDPCTRL), a0
+	lea	(VDPDATA), a1
+
+	move.l	#VRAM_ADDR_CMD, (a0)	; Start clearing VRAM
+	move.w	#(VRAM_SIZE/4)-1, d1
+_clear_vram:
+	move.l	d0, (a1)
+	dbf	d1, _clear_vram
+
+	move.l	#CRAM_ADDR_CMD, (a0)	; Start clearing CRAM
+	move.w	#(CRAM_SIZE/4)-1, d1
+_clear_cram:
+	move.l	d0, (a1)
+	dbf	d1, _clear_cram
+
+	move.l  #VSRAM_ADDR_CMD, (a0)	; Start clearing VSRAM
+    	move.w  #(VSRAM_SIZE/4)-1, d1
+_clear_vsram:
+    	move.l  d0, (a1)
+    	dbf     d1, _clear_vsram
+	rts
+
+; ================= Set MEM Addr macros ===========================
+; VDP *MEM addr encoding :
+; ((addr AND $3FFF) << 16) OR ((addr AND $C000) >> 14) OR const	
+
+m_vdp_set_addr_reg: macro reg, cmd
+	and.l	#$FFFF, reg		; Encode whatever VDP addr
+	lsl.l	#2, reg
+	lsr.w	#2, reg
+	swap	reg
+	or.l	#cmd, reg
+	move.l	reg, (VDPCTRL)
+	endm
+
+m_vdp_set_vram_addr: macro addr
+	m_vdp_set_addr_reg addr, VRAM_ADDR_CMD
+	endm
+
+m_vdp_set_cram_addr: macro addr
+	m_vdp_set_addr_reg addr, CRAM_ADDR_CMD
+	endm
+
+m_vdp_set_vsram_addr: macro addr
+	m_mdp_set_addr_reg addr, VSRAM_ADDR_CMD
+	endm
+
+; ================= Enable/Disable display ========================
+
+vdp_enable_display:	
+	lea	(VDPCTRL),a0
+    	move.w  #VDPREG_MODE2|$44,(a0)    ; Enable display
+	rts
+
+vdp_disable_display:	
+	lea	(VDPCTRL),a0
+    	move.w  #VDPREG_MODE2|$04,(a0)    ; Disable display
+	rts
+
+; ================= CPU VRAM copy (words) =========================
+; Use M68K to copy words from ptr to VRAM address
+; Args :
+;		D0.W : VRAM address
+;		D1.W : number of words to copy
+;		A0.L : pointer to data
+
+vdp_write_vram_cpu_w:
+	m_vdp_set_vram_addr d0		; Where we'll copy
+	
+	subq.w	#1, d1			; DBF stops at -1
+	blo.s	_done_copy_vram_w
+	lea	(VDPDATA), a1
+_copy_vram_w:
+	move.w	(a0)+, (a1)
+	dbf	d1, _copy_vram_w	; Size check reached
+
+_done_copy_vram_w:
+	rts	
+
+; ================= CPU VRAM copy (longs) =========================
+; Use M68K to copy longs from ptr to VRAM address
+; Args :
+;		D0.W : VRAM address
+;		D1.W : number of longs to copy
+;		A0.L : pointer to data
+
+vdp_write_vram_cpu_l:
+	m_vdp_set_vram_addr d0		; Where we'll copy
+	
+	subq.w	#1, d1			; DBF stops at -1
+	blo.s	_done_copy_vram_l
+	lea	(VDPDATA), a1
+_copy_vram_l:
+	move.l	(a0)+, (a1)
+	dbf	d1, _copy_vram_l	; Size check reached
+
+_done_copy_vram_l:
+	rts
+
+; ================= CPU CRAM copy ================================
+; Use M68K to copy palettes to CRAM
+; Args :
+;		D0 : Palette number
+;		A0 : pointer to palette
+
+vdp_write_cram_cpu:
+    	lsl.w #5, d0			; PALNUM * 32 = ADDR in CRAM
+    	m_vdp_set_cram_addr d0
+
+    	lea     (VDPDATA), a1		; Copy the whole palette
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    	move.l  (a0)+, (a1)
+    
+    	rts
+
+; ================= Wait VBlank ==================================
+
+vdp_wait_vblank:                   	; Wait for next frame to start
+_vblank_wait_1:                   	; Wait for next frame to start
+    	btst    #3, (VDPCTRL+1)
+    	beq.s   _vblank_wait_1
+_vblank_wait_2:
+    	btst    #3, (VDPCTRL+1)
+    	bne.s   _vblank_wait_2
+	
+	rts
