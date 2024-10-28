@@ -6,6 +6,8 @@
 e_byte EVA_RAM[ADDRSPACE 0xFF][ADDRSPACE 0xFFFF];
 eva_t eva;
 
+// =============================== HANDLERS ======================================
+
 void eva_update_address_bank ( void )
 {
 	eva.addr_bank = EVA_RAM[0x00][0x0001];
@@ -83,7 +85,7 @@ void eva_pulse_reset ( void )
 	}
 	evasound_parse_sbt ();
 	printf ( "(EVA) Pulse reset\n" );
-	printf ( "(EVA) Jump: BIOS\n" );
+	printf ( "(EVA) Hardware jump: BIOS\n" );
 }
 
 void eva_m68k_reset_feedback ( void )
@@ -95,51 +97,24 @@ void eva_m68k_reset_feedback ( void )
 		evasound.sound_bank[i].active = false;
 	}
 }
-					/* commands */
-void eva_stsp ( void )
-{
-	PlaySound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
-	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3]].active = true;
-}
 
-/*				EVASOUND			*/
-void eva_spsp ( void )
-{
-	StopSound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
-	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3]].active = false;
-}
+// =============================== INSTRUCTIONS ==================================
 
-void eva_ssp ( void )
-{
-	SetSoundPan ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank, ( float ) ( eva.pc + 1 /* ECT0E */ / 255.0f ) );
-	printf ("setsoundpan %X\n", eva.pc+1 );
-}
-
-/*				EVAFX				*/
-void eva_sesp ( void )
-{
-	e_byte spr_num = EVA_RAM[0x00][eva.pc + 1]; /* ECT0E */
-	e_byte spr_w = EVA_RAM[0x00][eva.pc + 4]; /* ECT1 (MSB) */
-	e_byte spr_h = EVA_RAM[0x00][eva.pc + 5]; /* ECT1 (MSB+1) */
-	e_word spr_vram_index = EVA_RAM[0x00][eva.pc + 2] << 8 | EVA_RAM[0x00][eva.pc + 3];
-	evafx.sprite[spr_num].spr = evafx_set_sprite ( EVA_RAM[0x01], spr_w, spr_h, spr_vram_index );
-	printf ( "(EVAFX) sprite set: NUM %02X: W %02X H %02X VRAM INDEX %04X\n", spr_num, spr_w, spr_h, spr_vram_index );
-}
-
-/*				other				*/
 void eva_reset ( void )
 {
 	eva_pulse_reset ();
 	m68k_pulse_reset ();
 }
 
-void eva_bootrom_swaprom ( void )
+void eva_bios_swaprom ( void )
 {
-	printf ( "(EVA) Jump: GAME\n" );
+	printf ( "(EVA) BIOS jump: GAME\n" );
 	eva.soft_boot = true;
 	m68k_pulse_reset ();
 }
-			        	/* ECT process */
+
+// =============================== EXECUTION =====================================
+
 void eva_process_ect ( void )
 {
 	/* if 68K is not writing to ECT, process ECT */
@@ -151,14 +126,13 @@ void eva_process_ect ( void )
 			switch ( EVA_RAM[0x00][i] )
 			{
 				default: printf ( "(EVA ERROR) FATAL: %02X: %02X: unrecognized command, ignored\n", 
-							eva.pc, i );
+						  eva.pc, i );
 				case 0x00: /* nop */ break;
 				case 0x01: eva_stsp (); break;
 				case 0x02: eva_spsp (); break;
 				case 0x03: eva_ssp (); break;
-				case 0x0F: eva_sesp (); break;
-				case 0xFE: eva_bootrom_swaprom (); break;
-				case 0xFF: eva_reset (); break;
+				case 0xEF: eva_reset (); break;
+				case 0xF0: eva_bios_swaprom (); break;
 			}
 		}
 		/* clear ECT */

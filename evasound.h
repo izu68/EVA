@@ -1,6 +1,7 @@
 #ifndef H_EVASOUND
 #define H_EVASOUND
 
+#include "eva.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <raylib.h>
@@ -22,5 +23,9 @@ extern evasound_t evasound;
 
 void evasound_parse_sbt ( void );
 void evasound_handle_loops ( void );
+
+void eva_stsp ( void );
+void eva_spsp ( void );
+void eva_ssp ( void );
 
 #endif

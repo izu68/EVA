@@ -2,6 +2,8 @@
 
 evasound_t evasound;
 
+// =============================== HANDLERS ======================================
+
 void evasound_parse_sbt ( void )
 {
 	FILE *file;
@@ -48,4 +50,25 @@ void evasound_handle_loops ( void )
 			PlaySound ( evasound.sound_bank[i].bank );
 		}
 	}
+}
+
+
+// =============================== INSTRUCTIONS ==================================
+
+void eva_stsp ( void )
+{
+	PlaySound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
+	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3]].active = true;
+}
+
+void eva_spsp ( void )
+{
+	StopSound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
+	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3]].active = false;
+}
+
+void eva_ssp ( void )
+{
+	SetSoundPan ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank, ( float ) ( eva.pc + 1 /* ECT0E */ / 255.0f ) );
+	printf ("setsoundpan %X\n", eva.pc+1 );
 }
