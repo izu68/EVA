@@ -1,3 +1,3 @@
 <p align="center">
-  <img src="docs/sysdiagram2.png"/>
+  <img src="docs/sysdiagram2.svg"/>
 </p>
