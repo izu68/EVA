@@ -1,0 +1,29 @@
+; -----------------------------------------------------------------
+; EVA - Eyecatcher
+; Contents :
+; -----------------------------------------------------------------
+
+	section .text
+	global eyecatch
+
+; ================= Eyecatcher ====================================
+
+eyecatch:
+	bsr	vdp_reset
+	bsr	vdp_clearmem
+
+	move.b	#0, d0
+	lea	eva_pal, a0
+	bsr	vdp_write_cram_cpu
+
+	move.w	#$0000, d0
+	move.w	#8960, d1
+	lea	eva_tiles, a0
+	bsr	vdp_write_vram_cpu_l
+
+	move.b	#$01, $A13070
+	move.b	#$00, $A13073
+	move.b	#$FF, $A130F0
+loop:
+	bsr	vdp_wait_vblank
+	bra	loop	

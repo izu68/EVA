@@ -50,6 +50,7 @@ _clr_loop:
 	move.l	d0,a4
 	move.l	d0,a5
 	move.l	d0,a6
+	bra	eyecatch
 
 	move.b	#$F0, $A13070	; Call ROM swap and reset MD
 	move.b	#$FF, $A130F0

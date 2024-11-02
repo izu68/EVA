@@ -24,8 +24,8 @@ C_OBJS = $(patsubst %.c, $(OBJDIR)/%.o, $(C_SRCS))
 OBJS = $(ASM_OBJS) $(C_OBJS)
 
 # binary exec
-TARGET = $(ROMDIR)/nihil.elf
-TARGET_ROM = $(ROMDIR)/nihil.bin
+TARGET = $(ROMDIR)/bios.elf
+TARGET_ROM = $(ROMDIR)/bios.bin
 
 # default target
 all: $(OBJDIR) $(TARGET)
@@ -54,9 +54,9 @@ clean:
 	mkdir -p obj/src obj/gfx
 
 run:
-	../maria/maria rom/nihil.bin
+	../../maria/maria rom/bios.bin
 runb:
-	/opt/toolchains/m68k-elf/emu/blastem rom/nihil.bin &> /dev/null &
+	/opt/toolchains/m68k-elf/emu/blastem rom/bios.bin &> /dev/null &
 runm:
 	mame genesis -cart rom/nihil.bin -window -resolution 640x480 -debug -nofilter
 

@@ -29,5 +29,5 @@
 	org $000100
 
 	ds.b 208
-	dc.b "EVA BIOS       "
+	dc.b "SEGA MEGA DRIVE"
 	ds.b $BF
