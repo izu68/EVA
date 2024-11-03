@@ -2,49 +2,11 @@
 
 // =============================== HANDLERS ======================================
 
-/* void plot_sprite_pixel 
-( 
-	e_word vram_offset, e_byte width_in_tiles, 
-	e_byte height_in_tiles, e_word x, e_word y, e_byte color
-) 
-{
-    	// Calculate the tile coordinates and pixel position within the tile
-    	int tile_x = x / 8;
-    	int tile_y = y / 8;
-    	int pixel_x = x % 8;
-    	int pixel_y = y % 8;
-
-    	// Calculate the index of the tile in the sprite data array
-    	int tile_index = tile_y * width_in_tiles + tile_x;
-    
-    	// Each tile is 32 bytes (64 pixels, 2 pixels per byte)
-    	int tile_offset = tile_index * 32;
-
-    	// Calculate the byte and nybble position for the specific pixel within the tile
-    	int pixel_index_in_tile = pixel_y * 8 + pixel_x;
-    	int byte_index = tile_offset + ( pixel_index_in_tile / 2 );
-    	int is_high_nybble = ( pixel_index_in_tile % 2 == 0 );
-
-    	// Write the color to the appropriate nybble
-    	if ( is_high_nybble ) 
-	{
-        	// Write to the high nybble
-        	EVA_RAM[0x01][vram_offset+byte_index] = 
-		( EVA_RAM[0x01][vram_offset+byte_index] & 0x0F ) | ( color << 4 );
-    	} 
-	else 
-	{
-        	// Write to the low nybble
-        	EVA_RAM[0x01][vram_offset+byte_index] = 
-		( EVA_RAM[0x01][vram_offset+byte_index] & 0xF0 ) | ( color & 0x0F );
-    	}
-} */
-
-#define PIXEL_TILE_ORDER 	0
-#define PIXEL_SPRITE_ORDER 	1
+#define TYPE_TILEMAP		0
+#define TYPE_SPRITE	 	1
 #define MODE_READ		0
 #define MODE_WRITE		1
-void access_pixel 
+e_byte access_pixel 
 ( 
 	e_byte mode, e_byte order, 
 	e_word vram_offset, 
@@ -52,40 +14,101 @@ void access_pixel
 	e_byte color 
 ) 
 {
-    	// Calculate the tile coordinates
-   	int tile_x = x / 8;
-    	int tile_y = y / 8;
+    	// Calculate tile coordinates
+   	e_byte tile_x = x / 8;
+    	e_byte tile_y = y / 8;
 
-    	// Calculate the tile index in VRAM based on the sprite width in tiles
-    	int tile_index = tile_x * sprite_height + tile_y;
+    	// Calculate tile index in VRAM based on object tile order
+	e_word tile_index;
+	if ( order == TYPE_TILEMAP )
+	{
+    		tile_index = tile_y * sprite_width + tile_x;
+	}
+	else
+	{
+    		tile_index = tile_x * sprite_height + tile_y;
+	}
 
-    	// Calculate the pixel position within the tile
-    	int pixel_x = x % 8;
-    	int pixel_y = y % 8;
+    	// Calculatee pixel position within the tile
+    	e_word pixel_x = x % 8;
+    	e_word pixel_y = y % 8;
 
-    	// Each tile is 32 bytes (8x8 pixels, 4 bits per pixel)
-    	int tile_offset = tile_index * 32;
+    	e_word tile_offset = tile_index * 32;
 
     	// Calculate the byte offset within the tile
-    	int byte_offset = pixel_y * 4 + (pixel_x / 2);
+    	e_word byte_offset = pixel_y * 4 + (pixel_x / 2);
     
     	// Fetch the byte containing the target pixel
-    	uint8_t byte = EVA_RAM[0x01][tile_offset + byte_offset];
+    	e_byte byte = EVA_RAM[0x01][tile_offset + byte_offset];
 
     	// Determine if we're modifying the high or low nybble
-    	if (pixel_x % 2 == 0) 
+	if ( mode == MODE_WRITE )
 	{
-        	// Modify the high nybble
-       		byte = (byte & 0x0F) | (color << 4);
-    	} 
-	else 
+    		if (pixel_x % 2 == 0) 
+		{
+        		// Modify high nybble
+       			byte = (byte & 0x0F) | (color << 4);
+    		} 
+		else 
+		{
+        		// Modify low nybble
+        		byte = (byte & 0xF0) | color;
+    		}
+	}
+	else
 	{
-        	// Modify the low nybble
-        	byte = (byte & 0xF0) | color;
-    	}
+		//printf ( "read pixel from offset %04X with coords X:%d Y:%d\n", vram_offset, x, y );
+		if (pixel_x % 2 == 0) 
+		{
+        		// Return high nybble
+        		return (byte >> 4) & 0x0F;
+    		} 
+		else 
+		{
+        		// Return low nybble
+        		return byte & 0x0F;
+    		}
+	}
 
-    	// Store the modified byte back into VRAM
+    	// Store modified byte back into VRAM
     	EVA_RAM[0x01][tile_offset + byte_offset] = byte;
+	return 0;
+}
+
+void fast_rotnscale ( e_word vram_offset, e_word trans_vram_offset, e_byte spr_w, e_byte spr_h, float angle, float scale )
+{
+	int width = spr_w * 8;
+	int height = spr_h * 8;
+	for ( int y = 0; y < height; y++ )
+	{
+		for ( int x = 0; x < width; x++ )
+		{
+			float u = cos ( -angle ) * x * ( 1.0f / scale )
+			    + sin ( -angle ) * y * ( 1.0f / scale );
+			float v = -( sin ( -angle ) ) * x * ( 1.0f / scale )
+			    + cos ( -angle ) * y * ( 1.0f / scale );
+			
+			access_pixel 
+			(
+				// Write to sprite
+				MODE_WRITE,
+				TYPE_SPRITE,
+				vram_offset,
+				spr_w, spr_h,
+				x, y,
+				access_pixel
+				(
+					// Read from sprite
+					MODE_READ,
+					TYPE_SPRITE,
+					trans_vram_offset,
+					spr_w, spr_h,
+					u, v,
+					0
+				)
+			);
+		}
+	}
 }
 
 // =============================== INSTRUCTIONS ==================================
@@ -98,14 +121,14 @@ void eva_pps ( void )
 	e_byte spr_h = EVA_RAM[0x00][eva.pc+5];
 	e_byte spr_x = EVA_RAM[0x00][eva.pc+8];
 	e_byte spr_y = EVA_RAM[0x00][eva.pc+9];
-	printf ( "(EVA) Plot pixel: Offset:%04X W:%02X H:%02X X:%02X Y:%02X Color:%01X\n", 
-		 vram_offset, spr_w, spr_h, spr_x, spr_y, color );
+	/* printf ( "(EVA) Plot pixel: Offset:%04X W:%02X H:%02X X:%02X Y:%02X Color:%01X\n", 
+		 vram_offset, spr_w, spr_h, spr_x, spr_y, color ); */
 	access_pixel 
 	(
 		// Write
 		MODE_WRITE,
 		// Sprite tile order
-		PIXEL_SPRITE_ORDER,
+		TYPE_SPRITE,
 		// Offset in VRAM (ECT1E)
 		vram_offset,
 		// SPR width and height (ECT1)
@@ -114,5 +137,21 @@ void eva_pps ( void )
 		spr_x, spr_y,
 		// Pixel value (ECT0E)
 		color
+	);
+}
+
+void eva_rgfx ( void )
+{
+	e_byte angle = EVA_RAM[0x00][eva.pc+1];
+	e_word vram_offset = EVA_RAM[0x00][eva.pc+2] << 8 | EVA_RAM[0x00][eva.pc+3];
+	e_byte spr_w = EVA_RAM[0x00][eva.pc+4];
+	e_byte spr_h = EVA_RAM[0x00][eva.pc+5];
+	fast_rotnscale
+	(
+		vram_offset,
+		0x1000,
+		spr_w, spr_h,
+		( float ) angle,
+		1.0f	
 	);
 }

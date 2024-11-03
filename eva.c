@@ -132,6 +132,7 @@ void eva_process_ect ( void )
 				case 0x02: eva_spsp (); break;
 				case 0x03: eva_ssp (); break;
 				case 0x08: eva_pps (); break;
+				case 0x09: eva_rgfx (); break;
 				case 0xEF: eva_reset (); break;
 				case 0xF0: eva_bios_swaprom (); break;
 			}
