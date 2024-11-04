@@ -14,6 +14,7 @@ e_byte access_pixel
 	e_byte color 
 ) 
 {
+	if ( x > sprite_width * 8 ) x = x - ( sprite_width * 8 );
     	// Calculate tile coordinates
    	e_byte tile_x = x / 8;
     	e_byte tile_y = y / 8;
@@ -39,7 +40,7 @@ e_byte access_pixel
     	e_word byte_offset = pixel_y * 4 + (pixel_x / 2);
     
     	// Fetch the byte containing the target pixel
-    	e_byte byte = EVA_RAM[0x01][tile_offset + byte_offset];
+    	e_byte byte = EVA_RAM[0x01][vram_offset + tile_offset + byte_offset];
 
     	// Determine if we're modifying the high or low nybble
 	if ( mode == MODE_WRITE )
@@ -57,7 +58,11 @@ e_byte access_pixel
 	}
 	else
 	{
-		//printf ( "read pixel from offset %04X with coords X:%d Y:%d\n", vram_offset, x, y );
+		/* printf 
+		( 
+			"read pixel from offset %04X with coords X:%d Y:%d COLOR:%X\n", 
+			tile_offset+byte_offset, x, y, byte
+		); */
 		if (pixel_x % 2 == 0) 
 		{
         		// Return high nybble
@@ -75,8 +80,14 @@ e_byte access_pixel
 	return 0;
 }
 
-void fast_rotnscale ( e_word vram_offset, e_word trans_vram_offset, e_byte spr_w, e_byte spr_h, float angle, float scale )
+void fast_rotnscale 
+( 
+	e_word vram_offset, e_word trans_vram_offset, 
+	e_byte spr_w, e_byte spr_h, 
+	float angle, float scale 
+)
 {
+	if ( scale > 1.0f ) scale = 1.0f;
 	int width = spr_w * 8;
 	int height = spr_h * 8;
 	for ( int y = 0; y < height; y++ )
@@ -85,7 +96,7 @@ void fast_rotnscale ( e_word vram_offset, e_word trans_vram_offset, e_byte spr_w
 		{
 			float u = cos ( -angle ) * x * ( 1.0f / scale )
 			    + sin ( -angle ) * y * ( 1.0f / scale );
-			float v = -( sin ( -angle ) ) * x * ( 1.0f / scale )
+			float v = -sin ( -angle ) * x * ( 1.0f / scale )
 			    + cos ( -angle ) * y * ( 1.0f / scale );
 			
 			access_pixel 
@@ -139,7 +150,8 @@ void eva_pps ( void )
 		color
 	);
 }
-
+float test_angle = 0;
+float test_scale = 0;
 void eva_rgfx ( void )
 {
 	e_byte angle = EVA_RAM[0x00][eva.pc+1];
@@ -151,7 +163,9 @@ void eva_rgfx ( void )
 		vram_offset,
 		0x1000,
 		spr_w, spr_h,
-		( float ) angle,
-		1.0f	
+		test_angle,
+		test_scale	
 	);
+	//test_angle += 0.05f
+	test_scale += 0.01f;
 }
