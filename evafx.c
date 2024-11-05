@@ -94,10 +94,17 @@ void fast_rotnscale
 	{
 		for ( int x = 0; x < width; x++ )
 		{
-			float u = cos ( -angle ) * x * ( 1.0f / scale )
-			    + sin ( -angle ) * y * ( 1.0f / scale );
-			float v = -sin ( -angle ) * x * ( 1.0f / scale )
-			    + cos ( -angle ) * y * ( 1.0f / scale );
+			float x_prime = x - (width / 2);
+			float y_prime = y - (height / 2);
+
+			float u = (cos(-angle) * x_prime * (1.0f / scale) + 
+					sin(-angle) * y_prime * (1.0f / scale)) + (width / 2);
+			float v = (-sin(-angle) * x_prime * (1.0f / scale) + 
+					cos(-angle) * y_prime * (1.0f / scale)) + (height / 2);
+			/* float u = ( cos ( -angle ) * x * ( 1.0f / scale )
+			    + sin ( -angle ) * y * ( 1.0f / scale ) );
+			float v = ( -sin ( -angle ) * x * ( 1.0f / scale )
+			    + cos ( -angle ) * y * ( 1.0f / scale ) ); */
 			
 			access_pixel 
 			(
@@ -150,8 +157,9 @@ void eva_pps ( void )
 		color
 	);
 }
+
 float test_angle = 0;
-float test_scale = 0;
+float test_scale = 1.0f;
 void eva_rgfx ( void )
 {
 	e_byte angle = EVA_RAM[0x00][eva.pc+1];
@@ -161,11 +169,11 @@ void eva_rgfx ( void )
 	fast_rotnscale
 	(
 		vram_offset,
-		0x1000,
+		0x2000,
 		spr_w, spr_h,
 		test_angle,
 		test_scale	
 	);
-	//test_angle += 0.05f
-	test_scale += 0.01f;
+	test_angle += 0.01f;
+	//test_scale += 0.01f;
 }
