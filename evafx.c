@@ -84,10 +84,12 @@ void fast_rotnscale
 ( 
 	e_word vram_offset, e_word trans_vram_offset, 
 	e_byte spr_w, e_byte spr_h, 
-	float angle, float scale 
+	float angle, 
+	float x_scale, float y_scale
 )
 {
-	if ( scale > 1.0f ) scale = 1.0f;
+	if ( x_scale > 1.0f ) x_scale = 1.0f;
+	if ( y_scale > 1.0f ) y_scale = 1.0f;
 	int width = spr_w * 8;
 	int height = spr_h * 8;
 	for ( int y = 0; y < height; y++ )
@@ -97,10 +99,11 @@ void fast_rotnscale
 			float x_prime = x - (width / 2);
 			float y_prime = y - (height / 2);
 
-			float u = (cos(-angle) * x_prime * (1.0f / scale) + 
-					sin(-angle) * y_prime * (1.0f / scale)) + (width / 2);
-			float v = (-sin(-angle) * x_prime * (1.0f / scale) + 
-					cos(-angle) * y_prime * (1.0f / scale)) + (height / 2);
+			float u = (cos(-angle) * x_prime * (1.0f / x_scale) + 
+					sin(-angle) * y_prime * (1.0f / x_scale)) + (width / 2);
+			float v = (-sin(-angle) * x_prime * (1.0f / y_scale) + 
+					cos(-angle) * y_prime * (1.0f / y_scale)) + (height / 2);
+
 			/* float u = ( cos ( -angle ) * x * ( 1.0f / scale )
 			    + sin ( -angle ) * y * ( 1.0f / scale ) );
 			float v = ( -sin ( -angle ) * x * ( 1.0f / scale )
@@ -159,7 +162,8 @@ void eva_pps ( void )
 }
 
 float test_angle = 0;
-float test_scale = 1.0f;
+float test_x_scale = 0.0f;
+float test_y_scale = 0.0f;
 void eva_rgfx ( void )
 {
 	e_byte angle = EVA_RAM[0x00][eva.pc+1];
@@ -172,8 +176,9 @@ void eva_rgfx ( void )
 		0x2000,
 		spr_w, spr_h,
 		test_angle,
-		test_scale	
+		test_x_scale, test_y_scale
 	);
-	test_angle += 0.01f;
-	//test_scale += 0.01f;
+	//test_angle += 0.01f;
+	test_x_scale += 1.0f;
+	test_y_scale += 0.005f;
 }

@@ -55,19 +55,19 @@ void evasound_handle_loops ( void )
 
 // =============================== INSTRUCTIONS ==================================
 
-void eva_stsp ( void )
+void eva_psnd ( void )
 {
 	PlaySound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
-	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3]].active = true;
+	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 1]].active = true;
 }
 
-void eva_spsp ( void )
+void eva_ssnd ( void )
 {
 	StopSound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
-	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3]].active = false;
+	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 1]].active = false;
 }
 
-void eva_ssp ( void )
+void eva_sspa ( void )
 {
 	SetSoundPan ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank, ( float ) ( eva.pc + 1 /* ECT0E */ / 255.0f ) );
 	printf ("setsoundpan %X\n", eva.pc+1 );

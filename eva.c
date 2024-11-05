@@ -120,7 +120,7 @@ void eva_process_ect ( void )
 	/* if 68K is not writing to ECT, process ECT */
 	if ( EVA_RAM[0x00][0xF0] != 0 )
 	{
-		for ( int i = 0x70; i < 0xF0; i += 16 )
+		for ( int i = 0x70; i < 0xF0; i += 8 )
 		{
 			eva.pc = i;
 			switch ( EVA_RAM[0x00][i] )
@@ -128,9 +128,9 @@ void eva_process_ect ( void )
 				default: printf ( "(EVA ERROR) FATAL: %02X: %02X: unrecognized command, ignored\n", 
 						  eva.pc, i );
 				case 0x00: /* nop */ break;
-				case 0x01: eva_stsp (); break;
-				case 0x02: eva_spsp (); break;
-				case 0x03: eva_ssp (); break;
+				case 0x01: eva_psnd (); break;
+				case 0x02: eva_ssnd (); break;
+				case 0x03: eva_sspa (); break;
 				case 0x08: eva_pps (); break;
 				case 0x09: eva_rgfx (); break;
 				case 0xEF: eva_reset (); break;

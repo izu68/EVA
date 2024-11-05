@@ -24,8 +24,8 @@ extern evasound_t evasound;
 void evasound_parse_sbt ( void );
 void evasound_handle_loops ( void );
 
-void eva_stsp ( void );
-void eva_spsp ( void );
-void eva_ssp ( void );
+void eva_psnd ( void );
+void eva_ssnd ( void );
+void eva_sspa ( void );
 
 #endif
