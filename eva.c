@@ -1,9 +1,20 @@
+// -------------------------------------------------------------------------------
+// EVA - Firmware main file
+// Contents :
+//		Memory addressing handlers
+//		System state handlers
+//		ECT runtime
+//		Main system cycle
+// Notes :
+//		*
+// -------------------------------------------------------------------------------
+
 #include "eva.h"
 #include "evasound.h"
 #include "evafx.h"
 #include "../maria/backend/m68k/m68kcpu.h"
 
-e_byte EVA_RAM[ADDRSPACE 0xFF][ADDRSPACE 0xFFFF];
+e_byte EVA_RAM[ADDRSPACE 0xF][ADDRSPACE 0xFFFF];
 eva_t eva;
 
 // =============================== HANDLERS ======================================
@@ -11,35 +22,38 @@ eva_t eva;
 void eva_update_address_bank ( void )
 {
 	eva.addr_bank = EVA_RAM[0x00][0x0001];
-	//printf ( "(EVA) ADDR BANK SET: %x\n", eva.addr_bank );
+	// Set to BANK 0 if exceded 1MB limit
+	if ( eva.addr_bank > 0xF ) eva.addr_bank = 0;
 }
 
 void eva_update_address_port ( void )
 {
 	eva_update_address_bank ();
 	eva.addr = EVA_RAM[0x00][0x0002] << 8 | EVA_RAM[0x00][0x0003];
-	//printf ( "(EVA) ADDR PORT SET: %x\n", eva.addr );
 }
 
 void eva_update_data_port ( void )
 {
+	// Do not allow writes to BANK 0
 	if ( eva.addr_bank == 0 )
 	{
 		printf ( "(EVA ERROR) Unauthorized access: BANK %02Xn", eva.addr_bank );
 		return;
 	}
-	eva.data = EVA_RAM[0x00][0x0004] << 24 | EVA_RAM[0x00][0x0005] << 16 |
-		   EVA_RAM[0x00][0x0006] << 8  | EVA_RAM[0x00][0x0007];
-	/* transfer from port to actual memory location */
+	// Write to memory location
 	EVA_RAM[eva.addr_bank][eva.addr] = EVA_RAM[0x00][0x0004];
 	EVA_RAM[eva.addr_bank][eva.addr+1] = EVA_RAM[0x00][0x0005];
 	EVA_RAM[eva.addr_bank][eva.addr+2] = EVA_RAM[0x00][0x0006];
 	EVA_RAM[eva.addr_bank][eva.addr+3] = EVA_RAM[0x00][0x0007];
+	// Report write (debug only)
+	eva.data = EVA_RAM[0x00][0x0004] << 24 | EVA_RAM[0x00][0x0005] << 16 |
+		   EVA_RAM[0x00][0x0006] << 8  | EVA_RAM[0x00][0x0007];
 	printf ( "(EVA) MEM Write: BANK %02X ADDR %04X: %08X\n", eva.addr_bank, eva.addr, eva.data );
 }
 
 void eva_update_registers ( void )
 {
+	// Update internal registers with data from control region mirror
 	eva.r0 = EVA_RAM[0x00][0x0010] << 24 | EVA_RAM[0x00][0x0011] << 16 |
 		 EVA_RAM[0x00][0x0012] << 8  | EVA_RAM[0x00][0x0013];
 	eva.r1 = EVA_RAM[0x00][0x0014] << 24 | EVA_RAM[0x00][0x0015] << 16 |
@@ -61,36 +75,43 @@ void eva_update_registers ( void )
 
 void eva_pulse_reset ( void )
 {
-	/* clear first RAM bank */
+	printf ( "(EVA) Pulse reset\n" );
+	// Clear control region bank
 	for ( int i = 0; i <= 0xFFFF; i++ )
 	{
 		EVA_RAM[0x00][i] = 0x00;
 	}
 	printf ( "(EVA) Interface memory clear\n" );
 
-	/* clear registers */
+	// Clear internal registers
 	eva.addr_bank = eva.addr = eva.data =
 	eva.r0 = eva.r1 = eva.r2 = eva.r3 =
 	eva.f0 = eva.f1 = eva.f2 = eva.f3 =
 	eva.flags = eva.pc = 0;
+	// Set HRC to BANK 2 and specify hard boot state
 	eva.hrc = 2;
 	eva.soft_boot = false;
+
 	printf ( "(EVA) Registers and ports clear\n" );
 
-	/* stop evasound and parse playback */
+	// Stop all sounds and parse SBT
 	for ( int i = 0; i <= 0xFF; i++ )
 	{
 		StopSound ( evasound.sound_bank[i].bank );
 		evasound.sound_bank[i].active = false;
 	}
 	evasound_parse_sbt ();
-	printf ( "(EVA) Pulse reset\n" );
-	printf ( "(EVA) Hardware jump: BIOS\n" );
+	printf ( "(EVA) Pass control to BIOS\n" );
 }
 
 void eva_m68k_reset_feedback ( void )
 {	
-	/* stop evasound and parse playback */
+	// Clear internal registers
+	eva.addr_bank = eva.addr = eva.data =
+	eva.r0 = eva.r1 = eva.r2 = eva.r3 =
+	eva.f0 = eva.f1 = eva.f2 = eva.f3 =
+	eva.flags = eva.pc = 0;
+	// Stop all sounds
 	for ( int i = 0; i <= 0xFF; i++ )
 	{
 		StopSound ( evasound.sound_bank[i].bank );
@@ -102,22 +123,24 @@ void eva_m68k_reset_feedback ( void )
 
 void eva_reset ( void )
 {
+	// Called from ECT (BIOS)
 	eva_pulse_reset ();
 	m68k_pulse_reset ();
 }
 
 void eva_bios_swaprom ( void )
 {
-	printf ( "(EVA) BIOS jump: GAME\n" );
+	// Called from ECT (BIOS )
+	printf ( "(EVA) BIOS EXEC GAME\n" );
 	eva.soft_boot = true;
-	m68k_pulse_reset ();
+	m68k_pulse_reset (); // Will also pass feedback to EVA
 }
 
 // =============================== EXECUTION =====================================
 
 void eva_process_ect ( void )
 {
-	/* if 68K is not writing to ECT, process ECT */
+	// If 68K is not writing to ECT, process ECT
 	if ( EVA_RAM[0x00][0xF0] != 0 )
 	{
 		for ( int i = 0x70; i < 0xF0; i += 8 )
@@ -137,7 +160,7 @@ void eva_process_ect ( void )
 				case 0xF0: eva_bios_swaprom (); break;
 			}
 		}
-		/* clear ECT */
+		// Clear ECT (00F0 (ECT lock) also set to 0)
 		for ( int i = 0x70; i <= 0xF0; i++ )
 		{
 			EVA_RAM[0x00][i] = 0x00;
@@ -147,6 +170,7 @@ void eva_process_ect ( void )
 
 void eva_cycle ( void )
 {
+	// Firmware loop
 	eva_process_ect ();
 	evasound_handle_loops ();
 }

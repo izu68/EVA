@@ -11,7 +11,7 @@
 #define e_flt	float
 
 #define ADDRSPACE 1+
-extern e_byte EVA_RAM[ADDRSPACE 0xFF][ADDRSPACE 0xFFFF];
+extern e_byte EVA_RAM[ADDRSPACE 0xF][ADDRSPACE 0xFFFF]; // 1MB of memory
 /*
 		   EVA MEMORY MAP
 	BANK 00: 0001 (A13001): ADDR BANK
