@@ -11,7 +11,10 @@
 #define e_flt	float
 
 #define ADDRSPACE 1+
-extern e_byte EVA_RAM[ADDRSPACE 0xF][ADDRSPACE 0xFFFF]; // 1MB of memory
+extern e_byte EVA_CONTROL[ADDRSPACE 0xFF];
+extern e_byte EVA_VRAM[ADDRSPACE 0xFFFF];
+extern e_byte EVA_TRAM[ADDRSPACE 0xFFFF];
+extern e_byte EVA_WRAM[ADDRSPACE 0x17FFF];
 /*
 		   EVA MEMORY MAP
 	BANK 00: 0001 (A13001): ADDR BANK
@@ -31,21 +34,18 @@ typedef struct
 {
 	e_long r0, r1, r2, r3;
 	e_flt  f0, f1, f2, f3;
-	e_byte hrc;	
 	e_word flags;
 	e_byte pc;
 
-	e_byte addr_bank;
-	e_word addr;
+	e_long addr;
 	e_long data;
 
 	bool soft_boot;
 } eva_t;
 extern eva_t eva;
 
-void eva_update_address_bank ( void );
-void eva_update_address_port ( void );
-void eva_update_data_port ( void );
+void eva_update_address_port ( e_byte type );
+void eva_update_data_port ( e_byte type );
 void eva_update_registers ( void );
 void eva_pulse_reset ( void );
 void eva_m68k_reset_feedback ( void );

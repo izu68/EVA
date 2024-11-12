@@ -12,47 +12,54 @@
 #include "eva.h"
 #include "evasound.h"
 #include "evafx.h"
-#include "../maria/backend/m68k/m68kcpu.h"
+//#include "../../maria/backend/m68k/m68kcpu.h"
 
-e_byte EVA_RAM[ADDRSPACE 0xF][ADDRSPACE 0xFFFF];
+e_byte EVA_CONTROL[ADDRSPACE 0xFF];
+e_byte EVA_VRAM[ADDRSPACE 0xFFFF];
+e_byte EVA_TRAM[ADDRSPACE 0xFFFF];
+e_byte EVA_WRAM[ADDRSPACE 0x17FFF];
 eva_t eva;
 
 // =============================== HANDLERS ======================================
 
-void eva_update_address_bank ( void )
+/*
+		e_byte type -> 0 = byte, 1 = word, 2 = long
+*/
+void eva_update_address_port ( e_byte type )
 {
-	eva.addr_bank = EVA_RAM[0x00][0x0001];
-	// Set to BANK 0 if exceded 1MB limit
-	if ( eva.addr_bank > 0xF ) eva.addr_bank = 0;
-}
-
-void eva_update_address_port ( void )
-{
-	eva_update_address_bank ();
-	eva.addr = EVA_RAM[0x00][0x0002] << 8 | EVA_RAM[0x00][0x0003];
-}
-
-void eva_update_data_port ( void )
-{
-	// Do not allow writes to BANK 0
-	if ( eva.addr_bank == 0 )
+	if ( type == 1 )
 	{
-		printf ( "(EVA ERROR) Unauthorized access: BANK %02Xn", eva.addr_bank );
-		return;
+		eva.addr = EVA_CONTROL[0x02] << 8 | EVA_CONTROL[0x03];
 	}
-	// Write to memory location
-	EVA_RAM[eva.addr_bank][eva.addr] = EVA_RAM[0x00][0x0004];
-	EVA_RAM[eva.addr_bank][eva.addr+1] = EVA_RAM[0x00][0x0005];
-	EVA_RAM[eva.addr_bank][eva.addr+2] = EVA_RAM[0x00][0x0006];
-	EVA_RAM[eva.addr_bank][eva.addr+3] = EVA_RAM[0x00][0x0007];
-	// Report write (debug only)
-	eva.data = EVA_RAM[0x00][0x0004] << 24 | EVA_RAM[0x00][0x0005] << 16 |
-		   EVA_RAM[0x00][0x0006] << 8  | EVA_RAM[0x00][0x0007];
-	printf ( "(EVA) MEM Write: BANK %02X ADDR %04X: %08X\n", eva.addr_bank, eva.addr, eva.data );
+	else if ( type == 2 )
+	{
+		eva.addr = EVA_CONTROL[0x00] << 24 | EVA_CONTROL[0x01] << 16 | EVA_CONTROL[0x02] << 8 | EVA_CONTROL[0x03];
+	}
+}
+
+void eva_update_data_port ( e_byte type )
+{
+	if ( type == 0 )
+	{
+		EVA_WRAM[eva.addr] = EVA_CONTROL[0x07];
+	}
+	else if ( type == 1 )
+	{
+		EVA_WRAM[eva.addr] = EVA_CONTROL[0x06];
+		EVA_WRAM[eva.addr+1] = EVA_CONTROL[0x07];
+	}
+	else if ( type == 2 )
+	{
+		EVA_WRAM[eva.addr] = EVA_CONTROL[0x04];
+		EVA_WRAM[eva.addr+1] = EVA_CONTROL[0x05];
+		EVA_WRAM[eva.addr+2] = EVA_CONTROL[0x06];
+		EVA_WRAM[eva.addr+3] = EVA_CONTROL[0x07];
+	}
 }
 
 void eva_update_registers ( void )
 {
+	/*
 	// Update internal registers with data from control region mirror
 	eva.r0 = EVA_RAM[0x00][0x0010] << 24 | EVA_RAM[0x00][0x0011] << 16 |
 		 EVA_RAM[0x00][0x0012] << 8  | EVA_RAM[0x00][0x0013];
@@ -71,50 +78,52 @@ void eva_update_registers ( void )
 		 EVA_RAM[0x00][0x002A] << 8  | EVA_RAM[0x00][0x002B];
 	eva.f3 = EVA_RAM[0x00][0x002C] << 24 | EVA_RAM[0x00][0x002D] << 16 |
 		 EVA_RAM[0x00][0x002E] << 8  | EVA_RAM[0x00][0x002F];
+	*/
 }
 
 void eva_pulse_reset ( void )
 {
 	printf ( "(EVA) Pulse reset\n" );
-	// Clear control region bank
-	for ( int i = 0; i <= 0xFFFF; i++ )
+
+	// Clear control region
+	for ( int i = 0; i <= 0xFF; i++ )
 	{
-		EVA_RAM[0x00][i] = 0x00;
+		EVA_CONTROL[i] = 0x00;
 	}
-	printf ( "(EVA) Interface memory clear\n" );
+	printf ( "(EVA) Control region cleared\n" );
 
 	// Clear internal registers
-	eva.addr_bank = eva.addr = eva.data =
+	eva.addr = eva.data =
 	eva.r0 = eva.r1 = eva.r2 = eva.r3 =
 	eva.f0 = eva.f1 = eva.f2 = eva.f3 =
 	eva.flags = eva.pc = 0;
 	// Set HRC to BANK 2 and specify hard boot state
-	eva.hrc = 2;
 	eva.soft_boot = false;
 
-	printf ( "(EVA) Registers and ports clear\n" );
+	printf ( "(EVA) Registers cleared\n" );
 
 	// Stop all sounds and parse SBT
 	for ( int i = 0; i <= 0xFF; i++ )
 	{
-		StopSound ( evasound.sound_bank[i].bank );
+		//StopSound ( evasound.sound_bank[i].bank );
 		evasound.sound_bank[i].active = false;
 	}
+
 	evasound_parse_sbt ();
-	printf ( "(EVA) Pass control to BIOS\n" );
+	//printf ( "(EVA) Pass control to BIOS\n" );
 }
 
 void eva_m68k_reset_feedback ( void )
 {	
 	// Clear internal registers
-	eva.addr_bank = eva.addr = eva.data =
+	eva.addr = eva.data =
 	eva.r0 = eva.r1 = eva.r2 = eva.r3 =
 	eva.f0 = eva.f1 = eva.f2 = eva.f3 =
 	eva.flags = eva.pc = 0;
 	// Stop all sounds
 	for ( int i = 0; i <= 0xFF; i++ )
 	{
-		StopSound ( evasound.sound_bank[i].bank );
+		//StopSound ( evasound.sound_bank[i].bank );
 		evasound.sound_bank[i].active = false;
 	}
 }
@@ -125,15 +134,15 @@ void eva_reset ( void )
 {
 	// Called from ECT (BIOS)
 	eva_pulse_reset ();
-	m68k_pulse_reset ();
+	//m68k_pulse_reset ();
 }
 
 void eva_bios_swaprom ( void )
 {
-	// Called from ECT (BIOS )
+	// Called from ECT (BIOS)
 	printf ( "(EVA) BIOS EXEC GAME\n" );
 	eva.soft_boot = true;
-	m68k_pulse_reset (); // Will also pass feedback to EVA
+	//m68k_pulse_reset (); // Will also pass feedback to EVA
 }
 
 // =============================== EXECUTION =====================================
@@ -141,12 +150,12 @@ void eva_bios_swaprom ( void )
 void eva_process_ect ( void )
 {
 	// If 68K is not writing to ECT, process ECT
-	if ( EVA_RAM[0x00][0xF0] != 0 )
+	if ( EVA_CONTROL[0xF0] != 0 )
 	{
 		for ( int i = 0x70; i < 0xF0; i += 8 )
 		{
 			eva.pc = i;
-			switch ( EVA_RAM[0x00][i] )
+			switch ( EVA_CONTROL[i] )
 			{
 				default: printf ( "(EVA ERROR) FATAL: %02X: %02X: unrecognized command, ignored\n", 
 						  eva.pc, i );
@@ -154,8 +163,8 @@ void eva_process_ect ( void )
 				case 0x01: eva_psnd (); break;
 				case 0x02: eva_ssnd (); break;
 				case 0x03: eva_sspa (); break;
-				case 0x08: eva_pps (); break;
-				case 0x09: eva_rgfx (); break;
+				case 0x10: eva_uptram (); break;
+				case 0x11: eva_ltsp (); break;
 				case 0xEF: eva_reset (); break;
 				case 0xF0: eva_bios_swaprom (); break;
 			}
@@ -163,7 +172,7 @@ void eva_process_ect ( void )
 		// Clear ECT (00F0 (ECT lock) also set to 0)
 		for ( int i = 0x70; i <= 0xF0; i++ )
 		{
-			EVA_RAM[0x00][i] = 0x00;
+			EVA_CONTROL[i] = 0x00;
 		}
 	}
 }

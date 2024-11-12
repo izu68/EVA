@@ -16,6 +16,7 @@
 #define TYPE_SPRITE	 	1
 #define MODE_READ		0
 #define MODE_WRITE		1
+#define MODE_READ_TRAM		2
 e_byte access_pixel 
 ( 
 	e_byte mode, e_byte order, 
@@ -24,14 +25,14 @@ e_byte access_pixel
 	e_byte color 
 ) 
 {
-	if ( x > sprite_width * 8 ) x = x - ( sprite_width * 8 );
+	if (x > sprite_width * 8) x = x - (sprite_width * 8);
     	// Calculate tile coordinates
    	e_byte tile_x = x / 8;
     	e_byte tile_y = y / 8;
 
     	// Calculate tile index in VRAM based on object tile order
 	e_word tile_index;
-	if ( order == TYPE_TILEMAP )
+	if (order == TYPE_TILEMAP)
 	{
     		tile_index = tile_y * sprite_width + tile_x;
 	}
@@ -49,12 +50,10 @@ e_byte access_pixel
     	// Calculate the byte offset within the tile
     	e_word byte_offset = pixel_y * 4 + (pixel_x / 2);
     
-    	// Fetch the byte containing the target pixel
-    	e_byte byte = EVA_RAM[0x01][vram_offset + tile_offset + byte_offset];
-
-    	// Determine if we're modifying the high or low nybble
-	if ( mode == MODE_WRITE )
+	// Fetch or write data accordingly
+	if (mode == MODE_WRITE)
 	{
+    		e_byte byte = EVA_VRAM[vram_offset + tile_offset + byte_offset];
     		if (pixel_x % 2 == 0) 
 		{
         		// Modify high nybble
@@ -65,14 +64,27 @@ e_byte access_pixel
         		// Modify low nybble
         		byte = (byte & 0xF0) | color;
     		}
+    		// Store modified byte back into VRAM
+    		EVA_VRAM[tile_offset + byte_offset] = byte;
+		return 0;
 	}
-	else
+	else if (mode == MODE_READ)
 	{
-		/* printf 
-		( 
-			"read pixel from offset %04X with coords X:%d Y:%d COLOR:%X\n", 
-			tile_offset+byte_offset, x, y, byte
-		); */
+    		e_byte byte = EVA_VRAM[vram_offset + tile_offset + byte_offset];
+		if (pixel_x % 2 == 0) 
+		{
+        		// Return high nybble
+        		return (byte >> 4) & 0x0F;
+    		} 
+		else 
+		{
+        		// Return low nybble
+        		return byte & 0x0F;
+    		}
+	}
+	else if (mode == MODE_READ_TRAM)
+	{
+    		e_byte byte = EVA_TRAM[vram_offset + tile_offset + byte_offset];
 		if (pixel_x % 2 == 0) 
 		{
         		// Return high nybble
@@ -85,26 +97,25 @@ e_byte access_pixel
     		}
 	}
 
-    	// Store modified byte back into VRAM
-    	EVA_RAM[0x01][tile_offset + byte_offset] = byte;
 	return 0;
 }
 
 void fast_rotnscale 
-( 
-	e_word vram_offset, e_word trans_vram_offset, 
-	e_byte spr_w, e_byte spr_h, 
-	float angle, 
+(
+	e_byte type,
+	e_word vram_offset, 
+	e_byte w, e_byte h, 
+	float angle_deg, 
 	float x_scale, float y_scale
 )
 {
-	if ( x_scale > 1.0f ) x_scale = 1.0f;
-	if ( y_scale > 1.0f ) y_scale = 1.0f;
-	int width = spr_w * 8;
-	int height = spr_h * 8;
-	for ( int y = 0; y < height; y++ )
+	int width = w * 8;
+	int height = h * 8;
+	float angle = angle_deg * (M_PI / 180); // DEG -> RAD
+
+	for (int y = 0; y < height; y++)
 	{
-		for ( int x = 0; x < width; x++ )
+		for (int x = 0; x < width; x++)
 		{
 			float x_prime = x - (width / 2);
 			float y_prime = y - (height / 2);
@@ -114,44 +125,49 @@ void fast_rotnscale
 			float v = (-sin(-angle) * x_prime * (1.0f / y_scale) + 
 					cos(-angle) * y_prime * (1.0f / y_scale)) + (height / 2);
 
-			/* float u = ( cos ( -angle ) * x * ( 1.0f / scale )
-			    + sin ( -angle ) * y * ( 1.0f / scale ) );
-			float v = ( -sin ( -angle ) * x * ( 1.0f / scale )
-			    + cos ( -angle ) * y * ( 1.0f / scale ) ); */
-			
-			access_pixel 
-			(
-				// Write to sprite
-				MODE_WRITE,
-				TYPE_SPRITE,
-				vram_offset,
-				spr_w, spr_h,
-				x, y,
-				access_pixel
-				(
-					// Read from sprite
-					MODE_READ,
-					TYPE_SPRITE,
-					trans_vram_offset,
-					spr_w, spr_h,
-					u, v,
-					0
-				)
-			);
+			// Bounds checking for u, v
+        		int pixel_value;
+        		if (u < 0 || u >= width || v < 0 || v >= height)
+        		{
+           			 pixel_value = 0;
+       			}
+        		else
+        		{
+            			pixel_value = access_pixel
+            			(
+                			MODE_READ_TRAM,
+                			type,
+                			vram_offset,
+                			w, h,
+                			u, v,
+                			0
+            			);
+        		}
+
+        		// Write to transformed
+        		access_pixel
+        		(
+            			MODE_WRITE,
+            			type,
+            			vram_offset,
+            			w, h,
+            			x, y,
+            			pixel_value
+        		);
 		}
 	}
 }
 
 // =============================== INSTRUCTIONS ==================================
 
-void eva_pps ( void )
+void eva_pps (void)
 {
-	e_byte color = EVA_RAM[0x00][eva.pc+1];
-	e_word vram_offset = EVA_RAM[0x00][eva.pc+2] << 8 | EVA_RAM[0x00][eva.pc+3];
-	e_byte spr_w = EVA_RAM[0x00][eva.pc+4];
-	e_byte spr_h = EVA_RAM[0x00][eva.pc+5];
-	e_byte spr_x = EVA_RAM[0x00][eva.pc+8];
-	e_byte spr_y = EVA_RAM[0x00][eva.pc+9];
+	e_byte color = EVA_CONTROL[eva.pc+1];
+	e_word vram_offset = EVA_CONTROL[eva.pc+2] << 8 | EVA_CONTROL[eva.pc+3];
+	e_byte spr_w = EVA_CONTROL[eva.pc+4];
+	e_byte spr_h = EVA_CONTROL[eva.pc+5];
+	e_byte spr_x = EVA_CONTROL[eva.pc+8];
+	e_byte spr_y = EVA_CONTROL[eva.pc+9];
 	/* printf ( "(EVA) Plot pixel: Offset:%04X W:%02X H:%02X X:%02X Y:%02X Color:%01X\n", 
 		 vram_offset, spr_w, spr_h, spr_x, spr_y, color ); */
 	access_pixel 
@@ -171,24 +187,28 @@ void eva_pps ( void )
 	);
 }
 
-float test_angle = 0;
-float test_x_scale = 0.0f;
-float test_y_scale = 0.0f;
-void eva_rgfx ( void )
+void eva_uptram (void)
 {
-	e_byte angle = EVA_RAM[0x00][eva.pc+1];
-	e_word vram_offset = EVA_RAM[0x00][eva.pc+2] << 8 | EVA_RAM[0x00][eva.pc+3];
-	e_byte spr_w = EVA_RAM[0x00][eva.pc+4];
-	e_byte spr_h = EVA_RAM[0x00][eva.pc+5];
+	for (e_word i = 0; i < 0xFFFF; i++)
+	{
+		EVA_TRAM[i] = EVA_VRAM[i];
+	}
+}
+
+void eva_ltsp (void)
+{
+	float angle = (EVA_CONTROL[eva.pc + 1] * 1.40625f);
+	e_word vram_offset = EVA_CONTROL[eva.pc + 2] << 8 | EVA_CONTROL[eva.pc + 3];
+	e_byte spr_w = EVA_CONTROL[eva.pc + 4];
+	e_byte spr_h = EVA_CONTROL[eva.pc + 5];
+	float x_scale = (EVA_CONTROL[eva.pc + 6] / 255.0f);
+	float y_scale = (EVA_CONTROL[eva.pc + 7] / 255.0f);
 	fast_rotnscale
 	(
+		TYPE_SPRITE,
 		vram_offset,
-		0x2000,
 		spr_w, spr_h,
-		test_angle,
-		test_x_scale, test_y_scale
+		angle,
+		x_scale, y_scale
 	);
-	//test_angle += 0.01f;
-	test_x_scale += 1.0f;
-	test_y_scale += 0.005f;
 }

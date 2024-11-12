@@ -16,6 +16,8 @@ evasound_t evasound;
 
 void evasound_parse_sbt ( void )
 {
+	InitAudioDevice ();
+
 	FILE *file;
 	int sid;
 	int loop;
@@ -36,7 +38,7 @@ void evasound_parse_sbt ( void )
 		{
 			printf ( "(EVA ERROR) Exceded maximum sound bank allocation\n" );
 			fclose ( file );
-			return
+			return;
 		}
 		evasound.sound_bank[sid].bank = LoadSound ( path_str );
 		evasound.sound_bank[sid].loop = loop;
@@ -45,7 +47,7 @@ void evasound_parse_sbt ( void )
 			printf ( "(EVA ERROR) Failed to allocate sound 0x%x\n", sid );
 			fclose ( file );
 			return;
-		} 
+		}
 		printf ( "(EVA) allocated sound bank %02X\n", sid );
     	}
 
@@ -57,7 +59,11 @@ void evasound_handle_loops ( void )
 	// Check if sound should be playing, is not playing and loop flag to loop
 	for ( int i = 0; i <= 0xFF; i++ )
 	{
-		if ( evasound.sound_bank[i].active && evasound.sound_bank[i].loop && !IsSoundPlaying ( evasound.sound_bank[i].bank ) )
+		if 
+		(
+			evasound.sound_bank[i].active && evasound.sound_bank[i].loop && 
+			!IsSoundPlaying ( evasound.sound_bank[i].bank ) 
+		)
 		{
 			PlaySound ( evasound.sound_bank[i].bank );
 		}
@@ -70,20 +76,20 @@ void evasound_handle_loops ( void )
 void eva_psnd ( void )
 {
 	// Called from ECT
-	PlaySound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
-	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 1]].active = true;
+	PlaySound ( evasound.sound_bank[EVA_CONTROL[eva.pc + 1 /* ECT1E LSB */]].bank );
+	evasound.sound_bank[EVA_CONTROL[eva.pc + 1]].active = true;
 }
 
 void eva_ssnd ( void )
 {
 	// Called from ECT
-	StopSound ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank );
-	evasound.sound_bank[EVA_RAM[0x00][eva.pc + 1]].active = false;
+	StopSound ( evasound.sound_bank[EVA_CONTROL[eva.pc + 1 /* ECT1E LSB */]].bank );
+	evasound.sound_bank[EVA_CONTROL[eva.pc + 1]].active = false;
 }
 
 void eva_sspa ( void )
 {
 	// Called from ECT
-	SetSoundPan ( evasound.sound_bank[EVA_RAM[0x00][eva.pc + 3 /* ECT1E LSB */]].bank, ( float ) ( eva.pc + 1 /* ECT0E */ / 255.0f ) );
+	SetSoundPan ( evasound.sound_bank[EVA_CONTROL[eva.pc + 3 /* ECT1E LSB */]].bank, ( float ) ( eva.pc + 1 /* ECT0E */ / 255.0f ) );
 	printf ("setsoundpan %X\n", eva.pc+1 );
 }

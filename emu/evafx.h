@@ -8,7 +8,7 @@
 #include <math.h>
 #include "eva.h"
 
-void eva_pps ( void );
-void eva_rgfx ( void );
+void eva_uptram (void); 
+void eva_ltsp (void);
  
 #endif
