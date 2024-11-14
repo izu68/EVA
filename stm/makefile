@@ -14,7 +14,10 @@ eva.bin: eva.elf
 	arm-none-eabi-objcopy -O binary $< $@
 
 flash: eva.bin
-	st-flash --reset write $< 0x8000000
+	dfu-util -a 0 -s 0x08000000 -D $<
+
+dump_sram:
+	dfu-util -a 0 -s 0x38800000:0xFFF -U dump_sram.bin
 
 clean:
 	rm *.elf* eva.bin

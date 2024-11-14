@@ -1,7 +1,7 @@
 ENTRY(_reset);
 MEMORY 
 {
-  	flash(rx)  	: ORIGIN = 0x08000000, LENGTH = 2048k
+  	flash(rx)  	: ORIGIN = 0x08000000, LENGTH = 1024k
 	control(rw)	: ORIGIN = 0x30000000, LENGTH = 0xFF
   	firmram(rwx)  	: ORIGIN = 0x300000FF, LENGTH = 0x1FF00
 }
