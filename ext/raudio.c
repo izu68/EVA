@@ -186,7 +186,7 @@ typedef struct tagBITMAPINFOHEADER {
 
 #if defined(RAUDIO_STANDALONE)
     #ifndef TRACELOG
-        #define TRACELOG(level, ...)    printf(__VA_ARGS__)
+        #define TRACELOG(level, ...)   // Disable TRACELOG 
     #endif
 
     // Allow custom memory allocators
