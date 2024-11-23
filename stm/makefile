@@ -1,11 +1,11 @@
 CFLAGS  ?=  -W -Wall -Wextra -Werror -Wundef -Wshadow -Wdouble-promotion \
             -Wformat-truncation -fno-common -Wconversion \
-            -g3 -Os -ffunction-sections -fdata-sections -I. \
+            -g3 -O0 -ffunction-sections -fdata-sections -I. \
             -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 $(EXTRA_CFLAGS)
 LDFLAGS ?= -Teva.ld -nostartfiles -nostdlib --specs nano.specs -lc -lgcc -Wl,--gc-sections -Wl,-Map=$@.map
 SOURCES = boot.c 
 
-build: eva.elf
+build: eva.elf eva.bin
 
 eva.elf: $(SOURCES)
 	arm-none-eabi-gcc $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
@@ -13,11 +13,11 @@ eva.elf: $(SOURCES)
 eva.bin: eva.elf
 	arm-none-eabi-objcopy -O binary $< $@
 
-flash: eva.bin
-	dfu-util -a 0 -s 0x08000000 -D $<
+debug:
+	openocd -f openocd/stlink-v2.cfg -f openocd/stm32h7x_dual_bank.cfg &> /dev/null &
 
-dump_sram:
-	dfu-util -a 0 -s 0x38800000:0xFFF -U dump_sram.bin
+connect:
+	telnet localhost 4444
 
 clean:
 	rm *.elf* eva.bin

@@ -1,5 +1,8 @@
+#include <stdint.h>
+
 int main ( void )
 {
+	*(volatile uint32_t*) 0x38000000 = 0xA1A2A3A4;
 	return 0;
 }
 
@@ -16,4 +19,4 @@ __attribute__ ( ( naked, noreturn ) ) void _reset ( void )
 
 // 16 standard and 91 STM32-specific handlers
 __attribute__ ( ( section ( ".vectors" ) ) ) 
-void ( *const tab[16 + 91])( void ) = { ( void* ) 0x3001FFFF, _reset }; // Stack pointer (high SRAM)
+void ( *const tab[16 + 91])( void ) = { ( void* ) 0x2001FFFF, _reset }; // Stack pointer (high DTCM)

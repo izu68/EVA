@@ -1,4 +1,5 @@
 EVA notes.
+(UPDATE THIS FILE, SOME STUFF IS OUTDATED)
 
 --------------------------- Device Specs ---------------------------
 
@@ -38,3 +39,13 @@ Firmware controls the next peripherals:
 		GPIOB: 0x58020400 - 0x580207FF: Address BUS (MSB) } 24-bit BUS
 		GPIOC: 0x58020800 - 0x58020BFF: Data BUS
 		GPIOD: 0x58020C00 - 0x58020FFF: CART signals
+
+--------------------------- Debugging notes ------------------------
+
+Flashing:
+flash write_image erase <path_to_firmware>.bin 0x08000000
+
+Debugging:
+arm-none-eabi-gdb <path_to_firmware>.elf
+target remote localhost:3333
+monitor reset halt
