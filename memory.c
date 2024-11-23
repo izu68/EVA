@@ -41,7 +41,7 @@ void write_freg (uint8_t reg, uint8_t word, uint32_t value)
 
 uint16_t eva_communicate_bus_read (uint32_t location)
 {
-	// Important note:
+	// Note:
 	//
 	// Only a word sized read handler is present, opposed to the write
 	// handlers which come in word and byte size varieties. This is because
@@ -52,6 +52,11 @@ uint16_t eva_communicate_bus_read (uint32_t location)
 	{
 		return EVRAM[location - eva.region_evram.start] << 8 | 
 		       EVRAM[location - eva.region_evram.start + 1];
+	}
+	else if (evaluate_mem_region (&eva.region_ewram, location))
+	{
+		return EWRAM[location - eva.region_ewram.start] << 8 |
+		       EWRAM[location - eva.region_ewram.start + 1];	
 	}
 
 	// CONTROL region reads
@@ -71,6 +76,11 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 		EVRAM[location - eva.region_evram.start] = value >> 8;
 		EVRAM[location - eva.region_evram.start + 1] = value;
 	}
+	else if (evaluate_mem_region (&eva.region_ewram, location))
+	{
+		EWRAM[location - eva.region_ewram.start] = value >> 8;
+		EWRAM[location - eva.region_ewram.start + 1] = value;	
+	}
 
 	// CONTROL region word writes
 	if (location >= 0xA13002 && location <= 0xA130E0)
@@ -82,13 +92,13 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 
 void eva_communicate_bus_write_b (uint32_t location, uint8_t value)
 {
-	// RAM regions byte writes (CAX)
-	if (eva.mmap_mode == CAX)
-	{
-		if (location >= 0x3F0000 && location <= 0x3FFFFF)
-		{	
-			EVRAM[location - 0x3F0000] = value;
-		}
+	// Note:
+	//
+	// Only CONTROL and EWRAM can be byte-written.
+
+	if (evaluate_mem_region (&eva.region_ewram, location))
+	{	
+		EWRAM[location - eva.region_ewram.start] = value;
 	}
 	
 	// CONTROL region byte writes
