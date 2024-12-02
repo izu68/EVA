@@ -6,8 +6,7 @@
 
 #define ADDRSPACE 1+
 extern uint8_t CONTROL[ADDRSPACE 0xFF];
-extern uint8_t EVRAM[ADDRSPACE 0xFFFF];
-extern uint8_t TRAM[ADDRSPACE 0xFFFF];
+extern uint8_t EVRAM[ADDRSPACE 0x1FFFF];
 extern uint8_t EWRAM[ADDRSPACE 0x1FFFF];
 extern uint8_t ESRAM[ADDRSPACE 0xFFF];
 
@@ -15,12 +14,6 @@ extern uint8_t ESRAM[ADDRSPACE 0xFFF];
 #define SETBIT(var, bit)	var |= (1 << (bit))
 #define CLRBIT(var, bit)	var &= (~(1 << (bit)))
 
-#define LOWORD 0
-#define HIWORD 1
-#define READ 0
-#define WRITE 1
-#define READ_B 2
-#define WRITE_B 3
 #define UNMAPPED 0xFFFFFFFF
 
 #define R0 0

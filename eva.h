@@ -1,5 +1,5 @@
-#ifndef H_EVA
-#define H_EVA
+#ifndef EVA_H
+#define EVA_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,8 @@ typedef struct
 {
 	uint32_t r0, r1, r2, r3;
 	uint32_t f0, f1, f2, f3;
-	uint16_t s0;
+	uint8_t us;
+	uint8_t ss;
 	uint8_t cc;
 	uint32_t addr;
 	uint16_t data;
@@ -26,10 +27,13 @@ typedef struct
 	mem_region_t region_evram;
 	mem_region_t region_ewram;
 	mem_region_t region_esram;
-} eva_t;
-extern eva_t eva;
+	mem_region_t region_tram;
+} eva_state;
+extern eva_state eva;
 
 void eva_reset (void);
 void eva_run (uint32_t sys_clock);
+void trigger_command_table (void);
+
 
 #endif

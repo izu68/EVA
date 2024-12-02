@@ -1,0 +1,5 @@
+use ffmpeg to convert mp3s to u8 pcm:
+
+ffmpeg -i input.mp3 -f u8 -acodec pcm_u8 -ac 2 -ar 44100 output.pcm
+
+

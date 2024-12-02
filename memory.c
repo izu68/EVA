@@ -2,8 +2,7 @@
 #include "eva.h"
 
 uint8_t CONTROL[ADDRSPACE 0xFF];
-uint8_t EVRAM[ADDRSPACE 0xFFFF];
-uint8_t TRAM[ADDRSPACE 0xFFFF];
+uint8_t EVRAM[ADDRSPACE 0x1FFFF];
 uint8_t EWRAM[ADDRSPACE 0x1FFFF];
 uint8_t ESRAM[ADDRSPACE 0xFFF];
 
@@ -45,8 +44,8 @@ uint16_t eva_communicate_bus_read (uint32_t location)
 	//
 	// Only a word sized read handler is present, opposed to the write
 	// handlers which come in word and byte size varieties. This is because
-	// it seems BlastEm's addressing code already handles byte writes by accessing
-	// the individual byte of a word as needed.
+	// it seems BlastEm's addressing code already handles byte reads using
+	// the word read handler and taking the MSB.
 	
 	if (evaluate_mem_region (&eva.region_evram, location))
 	{
@@ -60,8 +59,7 @@ uint16_t eva_communicate_bus_read (uint32_t location)
 	}
 
 	// CONTROL region reads
-	// Status register (A13000) is allowed
-	if (location >= 0xA13000 && location <= 0xA130E0)
+	if (location >= 0xA13010 && location <= 0xA130E0)
 	{
 		return CONTROL[location - 0xA13000] << 8 | CONTROL[location - 0xA13000 + 1];
 	}
@@ -73,6 +71,7 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 {
 	if (evaluate_mem_region (&eva.region_evram, location))
 	{
+		
 		EVRAM[location - eva.region_evram.start] = value >> 8;
 		EVRAM[location - eva.region_evram.start + 1] = value;
 	}
@@ -83,8 +82,10 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 	}
 
 	// CONTROL region word writes
-	if (location >= 0xA13002 && location <= 0xA130E0)
+	// System Status register (A13011) is restricted
+	if (location >= 0xA13010 && location <= 0xA130E0)
 	{
+		if (location == 0xA13011) return;
 		CONTROL[location - 0xA13000] = value >> 8;
 		CONTROL[location - 0xA13000 + 1] = value;
 	}
@@ -92,19 +93,20 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 
 void eva_communicate_bus_write_b (uint32_t location, uint8_t value)
 {
-	// Note:
-	//
-	// Only CONTROL and EWRAM can be byte-written.
-
+	if (evaluate_mem_region (&eva.region_evram, location))
+	{
+		EVRAM[location - eva.region_evram.start] = value;
+	}
 	if (evaluate_mem_region (&eva.region_ewram, location))
 	{	
 		EWRAM[location - eva.region_ewram.start] = value;
 	}
 	
 	// CONTROL region byte writes
-	// Status register (A13000) is restricted
-	if (location >= 0xA13002 && location <= 0xA130E0)
+	// System Status register (A13011) is restricted
+	if (location >= 0xA13010 && location <= 0xA130E0)
 	{
+		if (location == 0xA13011) return;
 		CONTROL[location - 0xA13000] = value;
 	}
 }
