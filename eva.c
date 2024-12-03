@@ -31,13 +31,6 @@ void eva_init (void)
 {
 	printf ("(EVA) System startup requested\n");
 
-	// Clear control
-	for (int i = 0; i <= 0xFF; i++)
-	{
-		CONTROL[i] = 0;
-	}
-	printf ("(EVA) Control memory cleared\n");
-
 	// Set memory map mode
 	uint8_t mmap_mode = CONTROL[0x12];
 	switch (mmap_mode)

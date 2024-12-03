@@ -33,6 +33,7 @@ extern eva_state eva;
 
 void eva_reset (void);
 void eva_run (uint32_t sys_clock);
+void listen_startup_magic (void);
 void trigger_command_table (void);
 
 
