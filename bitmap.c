@@ -49,7 +49,7 @@ void plot_pixel_sprite
 )
 {
 	pixel_pos_t pixel_pos;
-	compute_pixel_pos (0, &pixel_pos, evram_location, width, height, x, y);
+	compute_pixel_position (0, &pixel_pos, evram_location, width, height, x, y);
 	// Get original byte to preserve potential pixels that were already
 	// in the high or low nybble
     	uint8_t byte = EVRAM[pixel_pos.absolute_offset];
@@ -76,16 +76,16 @@ void read_pixel_sprite
 )
 {
 	pixel_pos_t pixel_pos;
-	compute_pixel_pos (0, &pixel_pos, evram_location, width, height, x, y);
+	compute_pixel_position (0, &pixel_pos, evram_location, width, height, x, y);
 	// Get original byte to preserve potential pixels that were already
 	// in the high or low nybble
     	uint8_t byte = EVRAM[pixel_pos.absolute_offset];
 	if (pixel_pos.nybble == 0)
 	{
-        	color = (byte >> 4) & 0x0F;
+        	*color = (byte >> 4) & 0x0F;
     	}
 	else
 	{
-        	color = byte & 0x0F;
+        	*color = byte & 0x0F;
     	}
 }
