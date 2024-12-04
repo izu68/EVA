@@ -15,8 +15,9 @@ typedef struct
 } pixel_pos_t;
 
 
-void plot_pixel_sprite 
+void plot_pixel 
 (
+	uint8_t mode,
 	uint16_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
@@ -25,8 +26,9 @@ void plot_pixel_sprite
 	uint8_t color
 );
 
-void read_pixel_sprite
+void read_pixel
 (
+	uint8_t mode,
 	uint16_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 

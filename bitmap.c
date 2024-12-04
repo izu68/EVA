@@ -38,8 +38,9 @@ static void compute_pixel_position
 				     pixel_pos->byte_offset;
 }
 
-void plot_pixel_sprite 
+void plot_pixel
 (
+	uint8_t mode,
 	uint16_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
@@ -49,7 +50,7 @@ void plot_pixel_sprite
 )
 {
 	pixel_pos_t pixel_pos;
-	compute_pixel_position (0, &pixel_pos, evram_location, width, height, x, y);
+	compute_pixel_position (mode, &pixel_pos, evram_location, width, height, x, y);
 	// Get original byte to preserve potential pixels that were already
 	// in the high or low nybble
     	uint8_t byte = EVRAM[pixel_pos.absolute_offset];
@@ -65,8 +66,9 @@ void plot_pixel_sprite
     	EVRAM[pixel_pos.absolute_offset] = byte;
 }
 
-void read_pixel_sprite
+void read_pixel
 (
+	uint8_t mode,
 	uint16_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
@@ -76,7 +78,7 @@ void read_pixel_sprite
 )
 {
 	pixel_pos_t pixel_pos;
-	compute_pixel_position (0, &pixel_pos, evram_location, width, height, x, y);
+	compute_pixel_position (mode, &pixel_pos, evram_location, width, height, x, y);
 	// Get original byte to preserve potential pixels that were already
 	// in the high or low nybble
     	uint8_t byte = EVRAM[pixel_pos.absolute_offset];

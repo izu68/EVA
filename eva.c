@@ -46,17 +46,17 @@ void eva_init (void)
 	// Map regions
 	switch (eva.mmap_mode)
 	{
-		case CAX: map_region (&eva.region_evram, 0x3C0000, 0x3DFFFF);
+		case CAX: map_region (&eva.region_evram, 0x3D0000, 0x3D7FFF);
+			  map_region (&eva.region_esram, 0x3D8000, 0x3D8FFF); 
 			  map_region (&eva.region_ewram, 0x3E0000, 0x3FFFFF);
-			  map_region (&eva.region_esram, UNMAPPED, UNMAPPED); 
 			  break;
-		case RAX: map_region (&eva.region_evram, 0x400000, 0x41FFFF);
-			  map_region (&eva.region_ewram, 0x420000, 0x43FFFF);
-			  map_region (&eva.region_esram, 0x440000, 0x440FFF);
+		case RAX: map_region (&eva.region_evram, 0x400000, 0x407FFF);
+			  map_region (&eva.region_esram, 0x408000, 0x408FFF);
+			  map_region (&eva.region_ewram, 0x410000, 0x42FFFF);
 			  break;
-		case XAX: map_region (&eva.region_evram, 0x7C0000, 0x7DFFFF);
+		case XAX: map_region (&eva.region_evram, 0x7D0000, 0x7D7FFF);
+			  map_region (&eva.region_esram, 0x7D8000, 0x7D8FFF);
 			  map_region (&eva.region_ewram, 0x7E0000, 0x7FFFFF);
-			  map_region (&eva.region_esram, UNMAPPED, UNMAPPED);
 			  break;
 	}		
 
@@ -72,8 +72,6 @@ void eva_init (void)
 
 	// System Status register initialization
 	SETBIT (eva.ss, 0x7); // System active
-	
-	InitAudioDevice (); // Init audio system simulation with RAUDIO
 }
 
 void listen_startup_magic (void)
@@ -92,7 +90,7 @@ void eva_reset (void)
 void trigger_command_table (void)
 {
 	SETBIT (eva.ss, 0x6); // ECT Runtime flag
-	for (uint8_t i = 0x20; i < 0xB0; i += 8 )
+	for (uint8_t i = 0x20; i < 0xB0; i += 8)
 	{
 		eva.cc = i;
 		switch (CONTROL[i])
