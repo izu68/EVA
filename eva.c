@@ -3,7 +3,7 @@
 #include <time.h>
 
 #include <SDL.h>
-#include "SDL_main.h"
+#include <SDL_main.h>
 
 eva_state eva;
 
