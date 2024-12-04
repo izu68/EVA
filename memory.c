@@ -6,6 +6,11 @@ uint8_t EVRAM[ADDRSPACE 0x1FFFF];
 uint8_t EWRAM[ADDRSPACE 0x1FFFF];
 uint8_t ESRAM[ADDRSPACE 0xFFF];
 
+// TODO:
+// Work in the register write logic with commands in the CT.
+// Work in ESRAM logic.
+// Work in floating point conversion logic for registers.
+
 void map_region (mem_region_t *mem_region, uint32_t start, uint32_t end)
 {
 	mem_region->start = start;

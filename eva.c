@@ -2,6 +2,9 @@
 #include "pcm.h"
 #include <time.h>
 
+#include <SDL.h>
+#include "SDL_main.h"
+
 eva_state eva;
 
 #define CYCLE_TIME_NS 2083 // Simulate ~480 MHz clock (2.083 ns per cycle)
