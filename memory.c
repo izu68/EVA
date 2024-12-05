@@ -96,6 +96,7 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 		CONTROL[location - 0xA13000] = value >> 8;
 		CONTROL[location - 0xA13000 + 1] = value;
 		if (location >= 0xA13012 && location <= 0xA13015) listen_startup_magic ();
+		if (location == 0xA130B0) trigger_command_table ();
 	}
 }
 
@@ -118,5 +119,6 @@ void eva_communicate_bus_write_b (uint32_t location, uint8_t value)
 		if (location == 0xA13011) return;
 		CONTROL[location - 0xA13000] = value;
 		if (location >= 0xA13012 && location <= 0xA13015) listen_startup_magic ();
+		if (location == 0xA130B0) trigger_command_table ();
 	}
 }

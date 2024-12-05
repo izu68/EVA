@@ -2,9 +2,6 @@
 #include "pcm.h"
 #include <time.h>
 
-#include <SDL.h>
-#include <SDL_main.h>
-
 eva_state eva;
 
 #define CYCLE_TIME_NS 2083 // Simulate ~480 MHz clock (2.083 ns per cycle)
@@ -30,9 +27,12 @@ static void halt_68k (void)
 static void release_68k (void)
 {}
 
-void eva_init (void)
+void init_eva (void)
 {
 	printf ("(EVA) System startup requested\n");
+
+	// Stop potential channels that were already playing
+	halt_channel (-1);
 
 	// Set memory map mode
 	uint8_t mmap_mode = CONTROL[0x12];
@@ -72,17 +72,19 @@ void eva_init (void)
 
 	// System Status register initialization
 	SETBIT (eva.ss, 0x7); // System active
+
+	init_pcm_system ();
 }
 
 void listen_startup_magic (void)
 {
 	if (CONTROL[0x13] == 'E' && CONTROL[0x14] == 'V' && CONTROL[0x15] == 'A')
 	{
-		eva_init ();
+		init_eva ();
 	}
 }
 
-void eva_reset (void)
+void reset_eva (void)
 {
 
 }
@@ -97,6 +99,9 @@ void trigger_command_table (void)
 		{
 			default: /* illegal command */ break;
 			case 0x00: goto _break_run; break;
+			case 0x01: load_sound_bank (CONTROL[i + 1]); break;
+			case 0x02: play_sound_bank (CONTROL[i + 1], CONTROL[i + 2]); break;
+			case 0x03: halt_channel (CONTROL[i + 1]); break;
 		}
 	}
 	_break_run:
