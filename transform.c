@@ -6,34 +6,37 @@ void linear_transform_sprite
 	uint32_t evram_location,
 	uint8_t width, 
 	uint8_t height,
-	uint8_t angle_b,
-	float x_scale_b, 
-	float y_scale_b
+	uint8_t angle_b
 )
 {
-	int angle_deg = angle_b * (360 / 256);
-	float angle = angle_deg * (M_PI / 180); // DEG -> RAD
+	const int32_t scale = 1 << 16; 	// Fixed-point scaling (2^16)
+	int32_t angle = angle_b * (360 / 256); // De-truncate angle range from a byte
+	int32_t cos_theta = (int)(cos(angle * M_PI / 180.0) * scale);
+	int32_t sin_theta = (int)(sin(angle * M_PI / 180.0) * scale);
 
-	int px_width = width * 8;
-	int px_height = height * 8;
+	int16_t px_width = width * 8;
+	int16_t px_height = height * 8;
 
-	int x_scale = x_scale_b / 256;
-	int y_scale = y_scale_b / 256;
+	int16_t cx = width / 2;		// Origin x
+	int16_t cy = height / 2;	// Origin y
+	int16_t dx, dy;			// Origin relative
 
-	for (int y = 0; y < px_height; y++)
+	int32_t u, v;			// Untransformed pixel coords
+
+        uint8_t pixel_value;
+
+	for (int16_t y = 0; y < px_height; y++)
 	{
-		for (int x = 0; x < px_width; x++)
+		for (int16_t x = 0; x < px_width; x++)
 		{
-			float x_prime = x - (px_width / 2);
-			float y_prime = y - (px_height / 2);
+			dx = x - cx;
+            		dy = y - cy;
 
-			float u = (cos(-angle) * x_prime * (1.0f / x_scale) +
-					sin(-angle) * y_prime * (1.0f / x_scale)) + (px_width / 2);
-			float v = (-sin(-angle) * x_prime * (1.0f / y_scale) +
-					cos(-angle) * y_prime * (1.0f / y_scale)) + (px_height / 2);
+            		// Compute rotated coordinates
+            		u = ((cos_theta * dx - sin_theta * dy) / scale) + cx;
+            		v = ((sin_theta * dx + cos_theta * dy) / scale) + cy;
 
-			// Bounds checking for u, v
-        		uint8_t pixel_value;
+			// Bounds checking for (u, v)
         		if (u < 0 || u >= width || v < 0 || v >= height)
         		{
            			 pixel_value = 0;
