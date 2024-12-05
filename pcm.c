@@ -65,6 +65,11 @@ void load_sound_bank (uint8_t sound_bank)
     	return;
 }
 
+void free_sound_bank (uint8_t sound_bank)
+{
+	sound_cache[sound_bank].bank = NULL;
+}
+
 void play_sound_bank (uint8_t sound_bank, uint8_t channel)
 {
 	if (sound_cache[sound_bank].bank)

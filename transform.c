@@ -10,15 +10,15 @@ void linear_transform_sprite
 )
 {
 	const int32_t scale = 1 << 16; 	// Fixed-point scaling (2^16)
-	int32_t angle = angle_b * (360 / 256); // De-truncate angle range from a byte
+	int32_t angle = angle_b * 1.40625; // De-truncate angle range from a byte (256 = 360DEG)
 	int32_t cos_theta = (int)(cos(angle * M_PI / 180.0) * scale);
 	int32_t sin_theta = (int)(sin(angle * M_PI / 180.0) * scale);
 
 	int16_t px_width = width * 8;
 	int16_t px_height = height * 8;
 
-	int16_t cx = width / 2;		// Origin x
-	int16_t cy = height / 2;	// Origin y
+	int16_t cx = px_width / 2;	// Origin x
+	int16_t cy = px_height / 2;	// Origin y
 	int16_t dx, dy;			// Origin relative
 
 	int32_t u, v;			// Untransformed pixel coords
@@ -37,7 +37,7 @@ void linear_transform_sprite
             		v = ((sin_theta * dx + cos_theta * dy) / scale) + cy;
 
 			// Bounds checking for (u, v)
-        		if (u < 0 || u >= width || v < 0 || v >= height)
+        		if (u < 0 || u >= px_width || v < 0 || v >= px_height)
         		{
            			 pixel_value = 0;
        			}
@@ -55,6 +55,10 @@ void linear_transform_sprite
 					&pixel_value
             			);
         		}
+
+			//printf
+			//(
+			//	"Got pixel data: EVRAM:%04X, W
 
         		// Write to transformed
 			plot_pixel

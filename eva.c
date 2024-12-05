@@ -1,5 +1,6 @@
 #include "eva.h"
 #include "pcm.h"
+#include "transform.h"
 #include <time.h>
 
 eva_state eva;
@@ -30,9 +31,6 @@ static void release_68k (void)
 void init_eva (void)
 {
 	printf ("(EVA) System startup requested\n");
-
-	// Stop potential channels that were already playing
-	halt_channel (-1);
 
 	// Set memory map mode
 	uint8_t mmap_mode = CONTROL[0x12];
@@ -78,7 +76,7 @@ void init_eva (void)
 
 void listen_startup_magic (void)
 {
-	if (CONTROL[0x13] == 'E' && CONTROL[0x14] == 'V' && CONTROL[0x15] == 'A')
+	if (!GETBIT (eva.ss, 0x7) && CONTROL[0x13] == 'E' && CONTROL[0x14] == 'V' && CONTROL[0x15] == 'A')
 	{
 		init_eva ();
 	}
@@ -86,7 +84,7 @@ void listen_startup_magic (void)
 
 void reset_eva (void)
 {
-
+	halt_channel (-1);	
 }
 
 void trigger_command_table (void)
@@ -102,6 +100,12 @@ void trigger_command_table (void)
 			case 0x01: load_sound_bank (CONTROL[i + 1]); break;
 			case 0x02: play_sound_bank (CONTROL[i + 1], CONTROL[i + 2]); break;
 			case 0x03: halt_channel (CONTROL[i + 1]); break;
+			case 0x04: free_sound_bank (CONTROL[i + 1]); break;
+			case 0x05: linear_transform_sprite (
+					CONTROL[i + 2] << 8 | CONTROL[i + 3],
+					CONTROL[i + 4],	CONTROL[i + 5], 
+					CONTROL[i + 1]
+			); break;
 		}
 	}
 	_break_run:

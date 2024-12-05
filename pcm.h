@@ -15,7 +15,6 @@
 
 typedef struct 
 {
-	uint8_t channel;
     	Mix_Chunk* bank;
 } sound_cache_entry;
 
@@ -23,5 +22,6 @@ uint8_t init_pcm_system (void);
 void load_sound_bank (uint8_t sound_bank);
 void play_sound_bank (uint8_t sound_bank, uint8_t channel);
 void halt_channel (int8_t channel);
+void free_sound_bank (uint8_t sound_bank);
 
 #endif
