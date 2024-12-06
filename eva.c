@@ -102,10 +102,14 @@ void trigger_command_table (void)
 			case 0x03: halt_channel (CONTROL[i + 1]); break;
 			case 0x04: free_sound_bank (CONTROL[i + 1]); break;
 			case 0x05: linear_transform_sprite (
-					CONTROL[i + 2] << 8 | CONTROL[i + 3],
-					CONTROL[i + 4],	CONTROL[i + 5], 
-					CONTROL[i + 6], CONTROL[i + 7],
-					CONTROL[i + 1]
+					CONTROL[i + 1] * 32, 	// Tile index * 32 = EVRAM offset
+					CONTROL[i + 2] >> 4, 	// WH >> 4 = W	
+					CONTROL[i + 2] & 0x0F,	// WH & 0x0F = H
+					CONTROL[i + 3],		// Origin X
+					CONTROL[i + 4],		// Origin Y
+					CONTROL[i + 5],		// Angle
+					CONTROL[i + 6],		// Scale X
+					CONTROL[i + 7]		// Scale Y
 			); break;
 		}
 	}
