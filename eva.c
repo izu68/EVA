@@ -104,6 +104,7 @@ void trigger_command_table (void)
 			case 0x05: linear_transform_sprite (
 					CONTROL[i + 2] << 8 | CONTROL[i + 3],
 					CONTROL[i + 4],	CONTROL[i + 5], 
+					CONTROL[i + 6], CONTROL[i + 7],
 					CONTROL[i + 1]
 			); break;
 		}

@@ -6,6 +6,8 @@ void linear_transform_sprite
 	uint32_t evram_location,
 	uint8_t width, 
 	uint8_t height,
+	uint8_t origin_x,
+	uint8_t origin_y,
 	uint8_t angle_b
 )
 {
@@ -17,8 +19,6 @@ void linear_transform_sprite
 	int16_t px_width = width * 8;
 	int16_t px_height = height * 8;
 
-	int16_t cx = px_width / 2;	// Origin x
-	int16_t cy = px_height / 2;	// Origin y
 	int16_t dx, dy;			// Origin relative
 
 	int32_t u, v;			// Untransformed pixel coords
@@ -29,12 +29,12 @@ void linear_transform_sprite
 	{
 		for (int16_t x = 0; x < px_width; x++)
 		{
-			dx = x - cx;
-            		dy = y - cy;
+			dx = x - origin_x;
+            		dy = y - origin_y;
 
             		// Compute rotated coordinates
-            		u = ((cos_theta * dx - sin_theta * dy) / scale) + cx;
-            		v = ((sin_theta * dx + cos_theta * dy) / scale) + cy;
+            		u = ((cos_theta * dx - sin_theta * dy) / scale) + origin_x;
+            		v = ((sin_theta * dx + cos_theta * dy) / scale) + origin_y;
 
 			// Bounds checking for (u, v)
         		if (u < 0 || u >= px_width || v < 0 || v >= px_height)
@@ -55,10 +55,6 @@ void linear_transform_sprite
 					&pixel_value
             			);
         		}
-
-			//printf
-			//(
-			//	"Got pixel data: EVRAM:%04X, W
 
         		// Write to transformed
 			plot_pixel
