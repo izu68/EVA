@@ -4,16 +4,35 @@
 #include "eva.h"
 #include <math.h>
 
-void linear_transform_sprite
+typedef struct
+{
+	uint16_t evram_location;
+	uint8_t width;
+	uint8_t height;
+} gfx_cache_t;
+
+void write_gfx_cache (uint8_t cache_index, uint16_t tile_index, uint8_t width, uint8_t height);
+
+void transform_sprite
 (
-	uint32_t evram_location,
-	uint8_t width,
-	uint8_t height,
+	uint8_t cache_index,
 	uint8_t origin_x,
 	uint8_t origin_y,
 	uint8_t angle_b,
 	uint8_t scale_x_b,
-	uint8_t scale_y_b
+	uint8_t scale_y_b,
+	uint8_t fill_color
+);
+
+void transform_plane
+(
+	uint8_t cache_index,
+	uint8_t origin_x,
+	uint8_t origin_y,
+	uint8_t angle_b,
+	uint8_t scale_x_b,
+	uint8_t scale_y_b,
+	uint8_t fill_color
 );
 
 #endif

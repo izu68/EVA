@@ -32,31 +32,9 @@ void init_eva (void)
 {
 	printf ("(EVA) System startup requested\n");
 
-	// Set memory map mode
-	uint8_t mmap_mode = CONTROL[0x12];
-	switch (mmap_mode)
-	{
-		default: printf ("(EVA ERROR) Invalid memory map mode, abort init\n"); return; break;
-		case 'C': printf ("(EVA) Memory map mode set to CAX\n"); eva.mmap_mode = CAX; break;
-		case 'R': printf ("(EVA) Memory map mode set to RAX\n"); eva.mmap_mode = RAX; break;
-		case 'X': printf ("(EVA) Memory map mode set to XAX\n"); eva.mmap_mode = XAX; break;
-	}
-	// Map regions
-	switch (eva.mmap_mode)
-	{
-		case CAX: map_region (&eva.region_evram, 0x3D0000, 0x3D7FFF);
-			  map_region (&eva.region_esram, 0x3D8000, 0x3D8FFF); 
-			  map_region (&eva.region_ewram, 0x3E0000, 0x3FFFFF);
-			  break;
-		case RAX: map_region (&eva.region_evram, 0x400000, 0x407FFF);
-			  map_region (&eva.region_esram, 0x408000, 0x408FFF);
-			  map_region (&eva.region_ewram, 0x410000, 0x42FFFF);
-			  break;
-		case XAX: map_region (&eva.region_evram, 0x7D0000, 0x7D7FFF);
-			  map_region (&eva.region_esram, 0x7D8000, 0x7D8FFF);
-			  map_region (&eva.region_ewram, 0x7E0000, 0x7FFFFF);
-			  break;
-	}		
+	map_region (&eva.region_evram, 0x400000, 0x407FFF);
+	map_region (&eva.region_esram, 0x408000, 0x408FFF);
+	map_region (&eva.region_ewram, 0x410000, 0x42FFFF);
 
 	// Clear registers
 	eva.r0 = eva.r1 = eva.r2 = eva.r3 = 0;
@@ -101,15 +79,33 @@ void trigger_command_table (void)
 			case 0x02: play_sound_bank (CONTROL[i + 1], CONTROL[i + 2]); break;
 			case 0x03: halt_channel (CONTROL[i + 1]); break;
 			case 0x04: free_sound_bank (CONTROL[i + 1]); break;
-			case 0x05: linear_transform_sprite (
-					CONTROL[i + 1] * 32, 	// Tile index * 32 = EVRAM offset
-					CONTROL[i + 2] >> 4, 	// WH >> 4 = W	
-					CONTROL[i + 2] & 0x0F,	// WH & 0x0F = H
-					CONTROL[i + 3],		// Origin X
-					CONTROL[i + 4],		// Origin Y
-					CONTROL[i + 5],		// Angle
-					CONTROL[i + 6],		// Scale X
-					CONTROL[i + 7]		// Scale Y
+			case 0x10: write_gfx_cache 
+			(
+					CONTROL[i + 1],		// Cache index
+					CONTROL[i + 2] << 8 | 
+					CONTROL[i + 3],		// Tile index
+					CONTROL[i + 4],		// Width
+					CONTROL[i + 5]		// Height
+			); break;
+			case 0x11: transform_sprite 
+			(
+					CONTROL[i + 1], 	// Cache index
+					CONTROL[i + 2],		// Origin X
+					CONTROL[i + 3],		// Origin Y
+					CONTROL[i + 4],		// Angle
+					CONTROL[i + 5],		// Scale X
+					CONTROL[i + 6],		// Scale Y
+					CONTROL[i + 7]		// Fill color
+			); break;
+			case 0x12: transform_plane
+			(
+					CONTROL[i + 1], 	// Cache index
+					CONTROL[i + 2],		// Origin X
+					CONTROL[i + 3],		// Origin Y
+					CONTROL[i + 4],		// Angle
+					CONTROL[i + 5],		// Scale X
+					CONTROL[i + 6],		// Scale Y
+					CONTROL[i + 7]		// Fill color
 			); break;
 		}
 	}
