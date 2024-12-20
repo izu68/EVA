@@ -3,15 +3,29 @@
 
 #include "eva.h"
 #include <math.h>
+#include <stdbool.h>
+
+#define FIXED_SHIFT 16
+#define FIXED_ONE (1 << FIXED_SHIFT)
 
 typedef struct
 {
 	uint16_t evram_location;
 	uint8_t width;
 	uint8_t height;
+	bool hflip;
+	bool vflip;
 } gfx_cache_t;
 
-void write_gfx_cache (uint8_t cache_index, uint16_t tile_index, uint8_t width, uint8_t height);
+void write_gfx_cache 
+(
+	uint8_t cache_index, 
+	uint16_t tile_index, 
+	uint8_t width, 
+	uint8_t height, 
+	bool hflip, 
+	bool vflip
+);
 
 void transform_sprite
 (

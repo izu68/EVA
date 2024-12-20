@@ -6,10 +6,10 @@
 typedef struct
 {
 // Most times I only need these ones
-	uint16_t absolute_offset;
+	uint32_t absolute_offset;
 	uint8_t nybble;
 // These ones are part of the calculation, just keeping them here
-	uint16_t address_offset;
+	uint32_t address_offset;
 	uint16_t tile_offset;
 	uint16_t byte_offset;
 } pixel_pos_t;
@@ -18,7 +18,7 @@ typedef struct
 void plot_pixel 
 (
 	uint8_t mode,
-	uint16_t evram_location, 
+	uint32_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
 	uint8_t x, 
@@ -29,7 +29,7 @@ void plot_pixel
 void read_pixel
 (
 	uint8_t mode,
-	uint16_t evram_location, 
+	uint32_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
 	uint8_t x, 

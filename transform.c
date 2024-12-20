@@ -1,14 +1,24 @@
 #include "transform.h"
 #include "bitmap.h"
 
-gfx_cache_t gfx_cache[ADDRSPACE 0xFF];
+gfx_cache_t gfx_cache[0xFF];
 
-void write_gfx_cache (uint8_t cache_index, uint16_t tile_index, uint8_t width, uint8_t height)
+void write_gfx_cache 
+(
+	uint8_t cache_index, 
+	uint16_t tile_index, 
+	uint8_t width, 
+	uint8_t height, 
+	bool hflip, 
+	bool vflip
+)
 {
 	uint32_t evram_location = tile_index * 32;
 	gfx_cache[cache_index].evram_location = evram_location;
 	gfx_cache[cache_index].width = width;
 	gfx_cache[cache_index].height = height;
+	gfx_cache[cache_index].hflip = hflip;
+	gfx_cache[cache_index].vflip = vflip;
 }
 
 static void transform
@@ -27,14 +37,14 @@ static void transform
 	uint8_t width = gfx_cache[cache_index].width;
 	uint8_t height = gfx_cache[cache_index].height;
 
-	const int32_t scale = 1 << 16; 	     	// Fixed-point scaling (2^16)
+	const int32_t scale = FIXED_ONE; 	// Fixed-point scaling (2^16)
 	int32_t angle = angle_b * 1.40625;   	// 1.40625 = 360 / 256
 
 	int32_t cos_theta = (int32_t)(cos(angle * M_PI / 180.0) * scale);
 	int32_t sin_theta = (int32_t)(sin(angle * M_PI / 180.0) * scale);
-
-	if (!scale_x_b) scale_x_b = 1;		// A division by zero here would be funny
-	if (!scale_y_b) scale_y_b = 1;
+	
+	scale_x_b = scale_x_b == 0 ? 1 : scale_x_b;	// Prevent div zero
+	scale_y_b = scale_y_b == 0 ? 1 : scale_y_b;	// Prevent div zero
 	int32_t scale_x = (scale * scale_x_b) / 255;
 	int32_t scale_y = (scale * scale_y_b) / 255;
 
@@ -67,10 +77,12 @@ static void transform
 			else 
 			{
 				// Read pixel from untransformed sprite
+				if (gfx_cache[cache_index].hflip) u = px_width - u;
+				if (gfx_cache[cache_index].vflip) v = px_height - v;
 				read_pixel
 				(
 					mode,
-					evram_location + 0x8000,
+					evram_location + 0x10000,
 					width,
 					height,
 					u,

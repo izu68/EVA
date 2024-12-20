@@ -5,7 +5,7 @@ static void compute_pixel_position
 (
     	uint8_t mode,	// 0 = sprite mode, !0 = bg tilemap mode
     	pixel_pos_t *pixel_pos,
-    	uint16_t address_offset,
+    	uint32_t address_offset,
     	uint8_t width,
     	uint8_t height,
     	uint16_t x,
@@ -59,7 +59,7 @@ static void compute_pixel_position
 void plot_pixel
 (
 	uint8_t mode,
-	uint16_t evram_location, 
+	uint32_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
 	uint8_t x, 
@@ -87,7 +87,7 @@ void plot_pixel
 void read_pixel
 (
 	uint8_t mode,
-	uint16_t evram_location, 
+	uint32_t evram_location, 
 	uint8_t width, 
 	uint8_t height, 
 	uint8_t x, 

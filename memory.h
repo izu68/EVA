@@ -6,7 +6,7 @@
 
 #define ADDRSPACE 1+
 extern uint8_t CONTROL[ADDRSPACE 0xFF];
-extern uint8_t EVRAM[ADDRSPACE 0xFFFF];
+extern uint8_t EVRAM[ADDRSPACE 0x1FFFF];
 extern uint8_t EWRAM[ADDRSPACE 0x1FFFF];
 extern uint8_t ESRAM[ADDRSPACE 0xFFF];
 

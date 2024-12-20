@@ -32,9 +32,9 @@ void init_eva (void)
 {
 	printf ("(EVA) System startup requested\n");
 
-	map_region (&eva.region_evram, 0x400000, 0x407FFF);
-	map_region (&eva.region_esram, 0x408000, 0x408FFF);
-	map_region (&eva.region_ewram, 0x410000, 0x42FFFF);
+	map_region (&eva.region_evram, 0x7C0000, 0x7CFFFF);
+	map_region (&eva.region_ewram, 0x7D0000, 0x7EFFFF);
+	map_region (&eva.region_esram, 0x7FF000, 0x7FFFFF);
 
 	// Clear registers
 	eva.r0 = eva.r1 = eva.r2 = eva.r3 = 0;
@@ -85,7 +85,9 @@ void trigger_command_table (void)
 					CONTROL[i + 2] << 8 | 
 					CONTROL[i + 3],		// Tile index
 					CONTROL[i + 4],		// Width
-					CONTROL[i + 5]		// Height
+					CONTROL[i + 5],		// Height
+					CONTROL[i + 6],		// HFLIP
+					CONTROL[i + 7]		// VFLIP
 			); break;
 			case 0x11: transform_sprite 
 			(

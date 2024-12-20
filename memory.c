@@ -2,7 +2,7 @@
 #include "eva.h"
 
 uint8_t CONTROL[ADDRSPACE 0xFF];
-uint8_t EVRAM[ADDRSPACE 0xFFFF];
+uint8_t EVRAM[ADDRSPACE 0x1FFFF];
 uint8_t EWRAM[ADDRSPACE 0x1FFFF];
 uint8_t ESRAM[ADDRSPACE 0xFFF];
 
@@ -79,8 +79,8 @@ void eva_communicate_bus_write (uint32_t location, uint16_t value)
 		EVRAM[location - eva.region_evram.start] = value >> 8;
 		EVRAM[location - eva.region_evram.start + 1] = value;
 
-		EVRAM[0x8000 + location - eva.region_evram.start] = value >> 8;
-		EVRAM[0x8000 + location - eva.region_evram.start + 1] = value;
+		EVRAM[0x10000 + location - eva.region_evram.start] = value >> 8;
+		EVRAM[0x10000 + location - eva.region_evram.start + 1] = value;
 	}
 	else if (evaluate_mem_region (&eva.region_ewram, location))
 	{
@@ -105,7 +105,7 @@ void eva_communicate_bus_write_b (uint32_t location, uint8_t value)
 	if (evaluate_mem_region (&eva.region_evram, location))
 	{
 		EVRAM[location - eva.region_evram.start] = value;
-		EVRAM[0x8000 + location - eva.region_evram.start] = value;
+		EVRAM[0x10000 + location - eva.region_evram.start] = value;
 	}
 	if (evaluate_mem_region (&eva.region_ewram, location))
 	{	
