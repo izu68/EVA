@@ -1,7 +1,13 @@
 ## BlastEm integration notes
 
-- Execution:
-EVA should run asynchronously from the rest of the system, but I have decided not to run its process in a separate thread or move it to a function call higher in the emulation hierarchy. All its logic is ran once every time the rest of the components sync, this is precisely in the `sync_components` function call. Last time I tested this seems to be every ~252 clock cycles (should dig further into that).
+Everything is glued to BlastEm in `genesis.c`.
 
-- Bus connection:
-EVA's connection to the system should be within the cartridge bus, but as is implemented all reads/writes are handled in `unused_read` and `unused_write`. This effectively means BlastEm won't really know that this should be a cartridge-specific component; all reads and writes to any address can be intercepted through those functions. As far as the emulator is concerned EVA's simulator appears to be an internal system component.
+### Execution
+
+EVA should act as a memory map unless it's running some command like scaling a sprite. Whenever a command is written and executed by the 68k through the control registers, EVA would halt the 68k and not release it until it's done rendering, to prevent the 68k from slowing down the rendering by requesting new data from the cartridge bus. The memory access functions fire command execution in response to the execution register being read or written.  
+
+Reset is handled in the `handle_reset_requests` function.  
+
+### Bus connection
+
+EVA's connection to the system should be within the cartridge bus, as is implemented all reads/writes are handled in `unused_read` and `unused_write` in `genesis.c`. The functions `eva_communicate_bus_read` and `eva_communicate_bus_write` inform EVA that certain interface memories or hardware registers have been accessed, the addresses are evaluated and execution is fired.
