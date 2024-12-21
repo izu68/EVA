@@ -4,7 +4,7 @@ Everything is glued to BlastEm in `genesis.c`.
 
 ### Execution
 
-EVA should act as a memory map unless it's running some command like scaling a sprite. Whenever a command is written and executed by the 68k through the control registers, EVA would halt the 68k and not release it until it's done rendering, to prevent the 68k from slowing down the rendering by requesting new data from the cartridge bus. The memory access functions fire command execution in response to the execution register being read or written.  
+EVA should act as a memory mapper unless it's running some command like scaling a sprite. Whenever a command is written and executed by the 68k through the control registers, EVA would halt the 68k and not release it until it's done rendering, to prevent the 68k from slowing down the rendering by requesting new data from the cartridge bus. The memory access functions fire command execution in response to the execution register being read or written.  
 
 Reset is handled in the `handle_reset_requests` function.  
 
